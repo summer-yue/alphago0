@@ -21,6 +21,7 @@ def make_move(board, move):
         return None
 
     (r, c) = move
+
     #Invalid move if placed on top of another existing stone
     if board.board_grid[r][c] != 0:
         return None
@@ -82,7 +83,59 @@ def find_adjacent_positions_with_same_color(position, board_grid):
     return neighbors
 
 def pieces_captured(board, move):
+    """Return the set of positions where stones are captured because of a move
+    Args:
+        board: current board config including player info
+        move: current move
+    Returns:
+        set of position tuples where stones are captured due to the current move
+    """
     pass
+
+    #Check remaining liberty of the <4 connected groups for move's direct neighbors
+    #If the liberty is equal 0, capture
+
+def count_libery_for_one_stone(board_grid, position):
+    """Count the liberties associated with one stone on the board,
+    in other words, the adjacent empty crosses
+    Args:
+        board_grid: 2d array representation of the board and stone distributions
+        position: used to identify the stone that we're looking for liberties for
+    Returns:
+        The liberty number associated with the stone
+    """
+    (r, c) = position
+    board_dimension = len(board_grid)
+    liberty = 0
+
+    #top
+    if r > 0 and board_grid[r - 1][c] == 0:
+        liberty += 1
+    #bottom
+    if r < board_dimension - 1 and board_grid[r + 1][c] == 0:
+        liberty += 1
+    #left
+    if c > 0 and board_grid[r][c - 1] == 0:
+        liberty += 1
+    #right
+    if c < board_dimension - 1 and board_grid[r][c + 1] == 0:
+        liberty += 1
+
+    return liberty
+
+def count_liberty(board_grid, position):
+    """Count the remaining liberties of the connected group of a particular position
+    Args:
+        board_grid: 2d array representation of the board and stone distributions
+        position: used to identify the connected group that we're looking for liberties for
+    Returns:
+        The remaining liberty number as an integer
+    """
+    group = find_pieces_in_group(position, board_grid)
+    total_liberties = 0
+    for stone in group:
+        total_liberties += count_libery_for_one_stone(board_grid, stone)
+    return total_liberties
 
 def is_ko(board, move):
     pass
