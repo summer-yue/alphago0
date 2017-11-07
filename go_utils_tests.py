@@ -298,6 +298,39 @@ class GoUtilsTest(unittest.TestCase):
                       [ 0,-1, 1, 0]]
         self.assertEqual(count_liberty(board_grid, position1), 3)
         self.assertEqual(count_liberty(board_grid, position2), 3)
+
+    def test_remove_pieces_if_no_liberty_1(self):
+        position = (2, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0,-1,-1, 0],
+                      [-1, 1, 1,-1],
+                      [ 0,-1, 1,-1]]
+        expected_solution =  [[ 0, 0, 0, 0],
+                              [ 0,-1,-1, 0],
+                              [-1, 0, 0,-1],
+                              [ 0,-1, 0,-1]]
+        self.assertEqual(remove_pieces_if_no_liberty(position, board_grid), expected_solution)
+
+    def test_remove_pieces_if_no_liberty_2(self):
+        position = (2, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0,-1,-1, 0],
+                      [-1, 1, 1, 0],
+                      [ 0,-1, 1,-1]]
+        expected_solution = None
+        self.assertEqual(remove_pieces_if_no_liberty(position, board_grid), expected_solution)
+
+    def test_remove_pieces_if_no_liberty_1(self):
+        position = (3, 1)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 0, 0, 0],
+                      [-1, 1, 1, 0],
+                      [ 1,-1, 1, 0]]
+        expected_solution =  [[ 0, 0, 0, 0],
+                              [ 0, 0, 0, 0],
+                              [-1, 1, 1, 0],
+                              [ 1, 0, 1, 0]]
+        self.assertEqual(remove_pieces_if_no_liberty(position, board_grid), expected_solution)
         
 if __name__ == '__main__':
     unittest.main()

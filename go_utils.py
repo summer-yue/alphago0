@@ -26,10 +26,37 @@ def make_move(board, move):
     if board.board_grid[r][c] != 0:
         return None
 
-    #Invalid move if placed in a spot that forms a piece that is completely surrounded
+    #Invalid move if placed in a spot that forms a group of stones with no liberty
     #Try making the move on a copied board and check if anything illegal is detected
+    board_copy = board.copy()
+    board_copy.board_grid[r][c] = board_copy.player
 
+    #Remove the stones captured because of this move
+    #Remove the groups of the stones that belong to the opponent directly next to current move
+
+
+    #Invalid move if current move would cause the current connected group to have 0 liberty
+    if count_libery_for_one_stone(board_grid, move) == 0:
+        return None
+        
     return board
+
+def remove_pieces_if_no_liberty(position, board_grid):
+    """Look at the pieces that form the group of position
+    If the group has no liberty, remove and return new grid
+    Args:
+        position: (r, c) tuple indicating the position of which piece we want to find the group for
+        board_grid: 2d array representation of the board
+    Returns:
+        new_board_grid: the new grid after removal of elements, or None if nothing was removed
+    """
+    if count_libery_for_one_stone(board_grid, position) == 0:
+        pieces_in_group = find_pieces_in_group(position, board_grid)
+    else:
+        return None
+    for (r, c) in pieces_in_group:
+        board_grid[r][c] = 0
+    return board_grid
 
 def find_pieces_in_group(position, board_grid):
     """For a potential move, find the surrounding pieces of the same player's stone
@@ -37,6 +64,8 @@ def find_pieces_in_group(position, board_grid):
     Args:
         position: (r, c) tuple indicating the position of which piece we want to find the group for
         board_grid: 2d array representation of the board
+    Returns:
+        a set of position tuples inidcaitng the pieces in the same group, including the originally position
     """
     queue = deque() #Track the frontier of positions to be visited
     group_members = set() #Stores the group members we already visited
@@ -81,19 +110,6 @@ def find_adjacent_positions_with_same_color(position, board_grid):
     if c < board_dimension - 1 and board_grid[r][c + 1] == player:
         neighbors.add((r, c + 1))
     return neighbors
-
-def pieces_captured(board, move):
-    """Return the set of positions where stones are captured because of a move
-    Args:
-        board: current board config including player info
-        move: current move
-    Returns:
-        set of position tuples where stones are captured due to the current move
-    """
-    pass
-
-    #Check remaining liberty of the <4 connected groups for move's direct neighbors
-    #If the liberty is equal 0, capture
 
 def count_libery_for_one_stone(board_grid, position):
     """Count the liberties associated with one stone on the board,

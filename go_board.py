@@ -1,3 +1,4 @@
+
 class go_board():
     def __init__(self, board_dimension, player, board_grid = None, game_history = None):
         """Initialize a go board
@@ -26,6 +27,15 @@ class go_board():
             self.player = -1
         else:
             self.player = 1
+
+    def copy(self):
+        """Make a deep copy of the go board
+        Returns:
+            copy of the go board
+        """
+        copy_board_grid = self.board_grid[:]
+        copy_game_history = self.game_history[:]
+        return go_board(self.board_dimension, self.player, copy_board_grid, copy_game_history)
 
     def __eq__(self, other):
         """Override the default Equals behavior"""
