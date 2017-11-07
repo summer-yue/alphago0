@@ -29,116 +29,123 @@ class GoUtilsTest(unittest.TestCase):
         board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
         self.assertTrue(make_move(board, move) is None)
 
-    # def test_make_move_invalid_move_into_an_eye(self):
-    #     move = (3, 0)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [-1, 0, 0, 0],
-    #                   [ 1, 0, 0, 0],
-    #                   [ 0, 1, 0, 0]]
-    #     game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     self.assertTrue(make_move(board, move) is None)
+    def test_make_move_invalid_move_into_an_eye(self):
+        move = (3, 0)
+        board_grid = [[ 0, 0, 0, 0],
+                      [-1, 0, 0, 0],
+                      [ 1, 0, 0, 0],
+                      [ 0, 1, 0, 0]]
+        game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+        self.assertTrue(make_move(board, move) is None)
 
-    # def test_make_move_invalid_move_into_an_eye_2(self):
-    #     move = (1, 0)
-    #     board_grid = [[ 1, 0, 0, 0],
-    #                   [ 0, 1, 0, 0],
-    #                   [ 1, 0, 0, 0],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [( 1, 0, 0), (-1, -1, -1), ( 1, 1, 1), (-1, -1, -1), ( 1, 2, 0)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     self.assertTrue(make_move(board, move) is None)
+    def test_make_move_invalid_move_into_an_eye_2(self):
+        move = (1, 0)
+        board_grid = [[ 1, 0, 0, 0],
+                      [ 0, 1, 0, 0],
+                      [ 1, 0, 0, 0],
+                      [ 0, 0, 0, 0]]
+        game_history = [( 1, 0, 0), (-1, -1, -1), ( 1, 1, 1), (-1, -1, -1), ( 1, 2, 0)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+        self.assertTrue(make_move(board, move) is None)
 
-    # def test_make_move_invalid_move_into_an_eye_3(self):
-    #     move = (1, 0)
-    #     board_grid = [[ 0, 1, 0, 0],
-    #                   [ 1, 0, 1, 0],
-    #                   [ 0, 1, 0, 0],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [( 1, 1, 0), (-1, -1, -1), ( 1, 0, 1), (-1, -1, -1), ( 1, 1, 2),
-    #         (-1, -1, -1), ( 1, 2, 1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     self.assertTrue(make_move(board, move) is None)
+    def test_make_move_invalid_move_into_an_eye_3(self):
+        move = (1, 0)
+        board_grid = [[ 0, 1, 0, 0],
+                      [ 1, 0, 1, 0],
+                      [ 0, 1, 0, 0],
+                      [ 0, 0, 0, 0]]
+        game_history = [( 1, 1, 0), (-1, -1, -1), ( 1, 0, 1), (-1, -1, -1), ( 1, 1, 2),
+            (-1, -1, -1), ( 1, 2, 1)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+        self.assertTrue(make_move(board, move) is None)
 
-    # def test_make_move_valid_move_capture_stone_1(self):
-    #     move = (3, 0)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [-1, 0, 0, 0],
-    #                   [ 1,-1, 1, 0],
-    #                   [ 0, 1, 0, 0]]
-    #     game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1), (-1, 2, 1), ( 1, 2, 2)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+    def test_make_move_valid_move_capture_stone_1(self):
+        move = (3, 0)
+        board_grid = [[ 0, 0, 0, 0],
+                      [-1, 0, 0, 0],
+                      [ 1,-1, 1, 0],
+                      [ 0, 1, 0, 0]]
+        game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1), (-1, 2, 1), ( 1, 2, 2)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
 
-    #     new_board_grid = [[ 0, 0, 0, 0],
-    #                   [-1, 0, 0, 0],
-    #                   [ 0,-1, 1, 0],
-    #                   [-1, 1, 0, 0]]
-    #     new_game_history = game_history + [(-1, 3, 0)]
-    #     new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-    #     self.assertEqual(make_move(board, move), new_board)
+        new_board_grid = [[ 0, 0, 0, 0],
+                          [-1, 0, 0, 0],
+                          [ 0,-1, 1, 0],
+                          [-1, 1, 0, 0]]
+        new_game_history = game_history + [(-1, 3, 0)]
+        new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
+        self.assertEqual(make_move(board, move), new_board)
 
-    # def test_make_move_valid_move_capture_stone_2(self):
-    #     move = (2, 0)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [ 0, 0, 0, 0],
-    #                   [ 0, 1, 0, 0],
-    #                   [ 1,-1, 0, 0]]
-    #     game_history = [( 1, 3, 0), (-1, 3, 1), ( 1, 2, 1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+    def test_make_move_valid_move_capture_stone_2(self):
+        move = (2, 0)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 0, 0, 0],
+                      [ 0, 1, 0, 0],
+                      [ 1,-1, 0, 0]]
+        game_history = [( 1, 3, 0), (-1, 3, 1), ( 1, 2, 1)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
 
-    #     new_board_grid = [[ 0, 0, 0, 0],
-    #                       [ 0, 0, 0, 0],
-    #                       [-1, 1, 0, 0],
-    #                       [ 0,-1, 0, 0]]
-    #     new_game_history = game_history + [(-1, 2, 0)]
-    #     new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-    #     self.assertEqual(make_move(board, move), new_board)
+        new_board_grid = [[ 0, 0, 0, 0],
+                          [ 0, 0, 0, 0],
+                          [-1, 1, 0, 0],
+                          [ 0,-1, 0, 0]]
+        new_game_history = game_history + [(-1, 2, 0)]
+        new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
+        self.assertEqual(make_move(board, move), new_board)
 
-    # def test_make_move_valid_move_capture_stone_3(self):
-    #     move = (2, 0)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [ 1, 0, 0, 0],
-    #                   [ 0, 1,-1, 0],
-    #                   [ 1,-1, 0, 0]]
-    #     game_history = [( 1, 3, 0), (-1, 3, 1), ( 1, 2, 1), (-1, 2, 2), ( 1, 1, 0)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+    def test_make_move_valid_move_capture_stone_3(self):
+        move = (2, 0)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 1, 0, 0, 0],
+                      [ 0, 1,-1, 0],
+                      [ 1,-1, 0, 0]]
+        game_history = [( 1, 3, 0), (-1, 3, 1), ( 1, 2, 1), (-1, 2, 2), ( 1, 1, 0)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
 
-    #     new_board_grid = [[ 0, 0, 0, 0],
-    #                       [ 1, 0, 0, 0],
-    #                       [-1, 1,-1, 0],
-    #                       [ 0,-1, 0, 0]]
-    #     new_game_history = game_history + [(-1, 2, 0)]
-    #     new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-    #     self.assertEqual(make_move(board, move), new_board)
+        new_board_grid = [[ 0, 0, 0, 0],
+                          [ 1, 0, 0, 0],
+                          [-1, 1,-1, 0],
+                          [ 0,-1, 0, 0]]
+        new_game_history = game_history + [(-1, 2, 0)]
+        new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
+        self.assertEqual(make_move(board, move), new_board)
 
-    # def test_make_move_valid_move_capture_stone_4(self):
-    #     move = (3, 2)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [ 0, 1,-1, 0],
-    #                   [ 1,-1, 1,-1],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [( 1, 2, 0), (-1, 2, 1), ( 1, 1, 1), (-1, 1, 2), ( 1, 2, 2),
-    #         (-1, 2, 3), ( 1, -1, -1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+    def test_make_move_valid_move_capture_stone_4(self):
+        move = (3, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 1,-1, 0],
+                      [ 1,-1, 1,-1],
+                      [ 0, 0, 0, 0]]
+        game_history = [( 1, 2, 0), (-1, 2, 1), ( 1, 1, 1), (-1, 1, 2), ( 1, 2, 2),
+            (-1, 2, 3), ( 1, -1, -1)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
 
-    #     new_board_grid = [[ 0, 0, 0, 0],
-    #                       [ 0, 1,-1, 0],
-    #                       [ 1,-1, 0,-1],
-    #                       [ 0, 0,-1, 0]]
-    #     new_game_history = game_history + [(-1, 3, 2)]
-    #     new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-    #     self.assertEqual(make_move(board, move), new_board)
+        new_board_grid = [[ 0, 0, 0, 0],
+                          [ 0, 1,-1, 0],
+                          [ 1,-1, 0,-1],
+                          [ 0, 0,-1, 0]]
+        new_game_history = game_history + [(-1, 3, 2)]
+        new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
+        self.assertEqual(make_move(board, move), new_board)
 
-    # def test_make_move_valid_move_capture_stone_5(self):
-    #     move = (0, 0)
-    #     board_grid = [[ 0, 1,-1, 0],
-    #                   [ 1,-1, 0, 0],
-    #                   [ 1, 1,-1, 0],
-    #                   [ 1,-1, 0, 0]]
-    #     game_history = [( 1, 2, 0), (-1, 2, 2), ( 1, 2, 1), (-1, 1, 1), ( 1, 1, 0),
-    #         (-1, 3, 1), ( 1, 3, 0), (-1, 0, 2), ( 1, 0, 1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     self.assertEqual(make_move(board, move), new_board)
+    def test_make_move_valid_move_capture_stone_5(self):
+        move = (0, 0)
+        board_grid = [[ 0, 1,-1, 0],
+                      [ 1,-1, 0, 0],
+                      [ 1, 1,-1, 0],
+                      [ 1,-1, 0, 0]]
+        game_history = [( 1, 2, 0), (-1, 2, 2), ( 1, 2, 1), (-1, 1, 1), ( 1, 1, 0),
+            (-1, 3, 1), ( 1, 3, 0), (-1, 0, 2), ( 1, 0, 1)]
+        board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
+
+        new_board_grid = [[-1, 0,-1, 0],
+                          [ 0,-1, 0, 0],
+                          [ 0, 0,-1, 0],
+                          [ 0,-1, 0, 0]]
+        new_game_history = game_history + [(-1, 0, 0)]
+        new_board = gb.go_board(board_dimension=4, player=1, board_grid = new_board_grid, game_history = new_game_history)
+        self.assertEqual(make_move(board, move), new_board)
 
     def test_make_move_valid_move_pass(self):
         move = (-1, -1)
@@ -211,74 +218,6 @@ class GoUtilsTest(unittest.TestCase):
         expected_solution = {(1, 0), (0, 1), (1, 1), (2, 1)}
         self.assertEqual(find_pieces_in_group(position, board_grid), expected_solution)
 
-    # def test_pieces_captured_1(self):
-    #     move = (0, 1)
-    #     board_grid = [[ 1, 0, 0, 0],
-    #                   [-1, 1, 0, 0],
-    #                   [ 0, 0, 0, 0],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [(1, 0, 0), (-1, 1, 0), (1, 1, 1)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {(0, 0)}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
-    # def test_pieces_captured_2(self):
-    #     move = (2, 0)
-    #     board_grid = [[ 1, 0, 0, 0],
-    #                   [-1, 1,-1, 0],
-    #                   [ 0, 0, 0, 0],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [(1, 0, 0), (-1, 1, 0), (1, 1, 1), (-1, 1, 2)]
-    #     board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {(1, 0)}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
-    # def test_pieces_captured_3(self):
-    #     move = (3, 0)
-    #     board_grid = [[-1, 0, 0, 0],
-    #                   [ 1,-1, 0, 0],
-    #                   [ 1, 1,-1, 0],
-    #                   [ 0,-1, 1, 0]]
-    #     game_history = [(1, 1, 0), (-1, 0, 0), (1, 2, 0), (-1, 1, 1), (1, 2, 1),
-    #         (-1, 2, 2), (1, 0, 2), (-1, 3, 1), (1, 3, 2)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {(1, 0), (2, 0), (2, 1)}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
-    # def test_pieces_captured_4_ko_like(self):
-    #     move = (3, 0)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [ 0,-1, 0, 0],
-    #                   [-1, 1, 1, 0],
-    #                   [ 0,-1, 1, 0]]
-    #     game_history = [(1, 2, 1), (-1, 1, 1), (1, 2, 2), (-1, 2, 0), (1, 3, 2), (-1, 3, 1)]
-    #     board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {(3, 1)}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
-    # def test_pieces_captured_5_ko_no_capture(self):
-    #     move = (3, 1)
-    #     board_grid = [[ 0, 0, 0, 0],
-    #                   [ 0,-1, 0, 0],
-    #                   [-1, 1, 1, 0],
-    #                   [ 1, 0, 1, 0]]
-    #     game_history = [(1, 2, 1), (-1, 1, 1), (1, 2, 2), (-1, 2, 0), (1, 3, 2), (-1, 3, 1),
-    #         (1, 0, 0)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
-    # def test_pieces_captured_6_no_capture(self):
-    #     move = (0, 2)
-    #     board_grid = [[ 0, 1, 0, 0],
-    #                   [ 1,-1, 1, 0],
-    #                   [ 0, 0, 0, 0],
-    #                   [ 0, 0, 0, 0]]
-    #     game_history = [(1, 1, 0), (-1, 1, 1), (1, 0, 1), (-1, -1, -1), (1, 1, 2)]
-    #     board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-    #     expected_solution = {}
-    #     self.assertEqual(pieces_captured(board, move), expected_solution)
-
     def test_count_liberty_1(self):
         position1 = (0, 0)
         position2 = (1, 1)
@@ -317,10 +256,10 @@ class GoUtilsTest(unittest.TestCase):
                       [ 0,-1,-1, 0],
                       [-1, 1, 1, 0],
                       [ 0,-1, 1,-1]]
-        expected_solution = None
+        expected_solution = board_grid
         self.assertEqual(remove_pieces_if_no_liberty(position, board_grid), expected_solution)
 
-    def test_remove_pieces_if_no_liberty_1(self):
+    def test_remove_pieces_if_no_liberty_3(self):
         position = (3, 1)
         board_grid = [[ 0, 0, 0, 0],
                       [ 0, 0, 0, 0],

@@ -28,17 +28,30 @@ def make_move(board, move):
 
     #Invalid move if placed in a spot that forms a group of stones with no liberty
     #Try making the move on a copied board and check if anything illegal is detected
-    board_copy = board.copy()
-    board_copy.board_grid[r][c] = board_copy.player
+    board.board_grid[r][c] = board.player
 
     #Remove the stones captured because of this move
     #Remove the groups of the stones that belong to the opponent directly next to current move
-
+    #top
+    if r > 0 and board.board_grid[r - 1][c] == -board.player:
+        board.board_grid = remove_pieces_if_no_liberty((r - 1, c), board.board_grid)
+    #bottom
+    if r < board.board_dimension - 1 and board.board_grid[r + 1][c] == -board.player:
+        board.board_grid = remove_pieces_if_no_liberty((r + 1, c), board.board_grid)
+    #left
+    if c > 0 and board.board_grid[r][c - 1] == -board.player:
+        board.board_grid = remove_pieces_if_no_liberty((r, c - 1), board.board_grid)
+    #right
+    if c < board.board_dimension - 1 and board.board_grid[r][c + 1] == -board.player:
+        board.board_grid = remove_pieces_if_no_liberty((r, c + 1), board.board_grid)
 
     #Invalid move if current move would cause the current connected group to have 0 liberty
-    if count_libery_for_one_stone(board_grid, move) == 0:
+    if count_liberty_for_one_stone(board.board_grid, move) == 0:
         return None
-        
+
+    #After a move is successfully made, update the board to reflect that and return
+    board.game_history = board.game_history + [(board.player, r, c)]
+    board.player = -board.player
     return board
 
 def remove_pieces_if_no_liberty(position, board_grid):
@@ -48,12 +61,12 @@ def remove_pieces_if_no_liberty(position, board_grid):
         position: (r, c) tuple indicating the position of which piece we want to find the group for
         board_grid: 2d array representation of the board
     Returns:
-        new_board_grid: the new grid after removal of elements, or None if nothing was removed
+        new_board_grid: the new grid after removal of elements
     """
-    if count_libery_for_one_stone(board_grid, position) == 0:
+    if count_liberty_for_one_stone(board_grid, position) == 0:
         pieces_in_group = find_pieces_in_group(position, board_grid)
     else:
-        return None
+        return board_grid
     for (r, c) in pieces_in_group:
         board_grid[r][c] = 0
     return board_grid
@@ -111,7 +124,7 @@ def find_adjacent_positions_with_same_color(position, board_grid):
         neighbors.add((r, c + 1))
     return neighbors
 
-def count_libery_for_one_stone(board_grid, position):
+def count_liberty_for_one_stone(board_grid, position):
     """Count the liberties associated with one stone on the board,
     in other words, the adjacent empty crosses
     Args:
@@ -150,7 +163,7 @@ def count_liberty(board_grid, position):
     group = find_pieces_in_group(position, board_grid)
     total_liberties = 0
     for stone in group:
-        total_liberties += count_libery_for_one_stone(board_grid, stone)
+        total_liberties += count_liberty_for_one_stone(board_grid, stone)
     return total_liberties
 
 def is_ko(board, move):
