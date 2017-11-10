@@ -26,6 +26,10 @@ def make_move(board, move):
     if board.board_grid[r][c] != 0:
         return None
 
+    #Invalid move because of Ko restrictions, this condition is checked before the liberty constraint
+    if is_invalid_move_because_of_ko(board, move):
+        return None
+
     #Invalid move if placed in a spot that forms a group of stones with no liberty
     #Try making the move on a copied board and check if anything illegal is detected
     board.board_grid[r][c] = board.player
@@ -166,7 +170,14 @@ def count_liberty(board_grid, position):
         total_liberties += count_liberty_for_one_stone(board_grid, stone)
     return total_liberties
 
-def is_ko(board, move):
+def is_invalid_move_because_of_ko(board, move):
+    """Detect if a move if invalid due to the ko condition
+    1. the current stone is surrounded by 4 opponents in all directions not on the border
+    2. and the for all of the adjacent opponent stones, only one of them has no liberty after this move
+    3. and the one stone from 2 is not connected to any other stones
+    4. and the stone with no liberty from 2's position was played in the last move
+    """
+    #TODO
     pass
 
 def is_move_pass(move):

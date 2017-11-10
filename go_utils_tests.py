@@ -270,6 +270,85 @@ class GoUtilsTest(unittest.TestCase):
                               [-1, 1, 1, 0],
                               [ 1, 0, 1, 0]]
         self.assertEqual(remove_pieces_if_no_liberty(position, board_grid), expected_solution)
-        
+
+    def test_is_invalid_move_because_of_ko1_ko_corner(self):
+        move = (1, 0)
+        board_grid = [[-1, 1, 0, 0],
+                      [ 0,-1, 0, 0],
+                      [-1, 0, 0, 0],
+                      [ 0, 0, 0, 1]]
+        game_history = [(1, 0, 1), (-1, 1, 1), (1, 1, 0), (-1, 2, 0), (1, 3, 3), (-1, 0, 0)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+
+        self.assertTrue(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko2_ko_side(self):
+        move = (1, 0)
+        board_grid = [[-1, 0, 0, 0],
+                      [ 0,-1, 0, 0],
+                      [-1, 1, 0, 0],
+                      [ 1, 0, 0, 0]]
+        game_history = [(1, 1, 0), (-1, 0, 0), (1, 2, 1), (-1, 1, 1), (1, 3, 0), (-1, 2, 0)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+        self.assertTrue(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko3_ko_center(self):
+        move = (2, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 1,-1, 0],
+                      [ 1,-1, 0,-1],
+                      [ 0, 1,-1, 0]]
+        game_history = [(1, 2, 0), (-1, 2, 3), (1, 1, 1), (-1, 1, 2), (1, 2, 2), (-1, 3, 2), (1, 3, 1), (-1, 2, 1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+        self.assertTrue(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko4_not_ko_corner(self):
+        #Current move is not surrounded by opponents' stones
+        move = (0, 1)
+        board_grid = [[-1, 0, 0, 0],
+                      [ 1,-1, 0, 0],
+                      [ 0, 0, 0, 0],
+                      [ 1, 0, 0, 0]]
+        game_history = [(1, 3, 0), (-1, 0, 0), (1, 1, 0), (-1, 1, 1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+        self.assertFalse(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko5_not_ko_center(self):
+        #Current move captures two adjacent groups 
+        move = (1, 2)
+        board_grid = [[ 0, 1,-1, 1],
+                      [ 1,-1, 0,-1],
+                      [ 0, 1,-1, 0],
+                      [ 0, 0, 0, 0]]
+        game_history = [(1, 1, 0), (-1, 0, 2), (1, 0, 1), (-1, 2, 2), (1, 2, 1), (-1, 1, 3), (1, 0, 3), (-1, 1, 1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+        self.assertFalse(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko6_not_ko_center(self):
+        #Capture Two stones that are connected from the move
+        move = (2, 1)
+        board_grid = [[ 0, 0, 0, 0, 0],
+                      [ 0, 1,-1,-1, 0],
+                      [ 1, 0, 1, 1,-1],
+                      [ 0, 1,-1,-1, 0],
+                      [ 0, 0, 0, 0, 0]]
+        game_history = [(1, 1, 1), (-1, 1, 2), (1, 2, 2), (-1, 1, 3), (1, 2, 3),
+                        (-1, 2, 4), (1, -1, -1), (-1, 3, 3), (1, 3, 1), (-1, 3, 2),
+                        (1, 2, 0)]
+        board = gb.go_board(board_dimension=5, player=-1, board_grid = board_grid, game_history = game_history)
+        self.assertFalse(is_invalid_move_because_of_ko(board, move))
+
+    def test_is_invalid_move_because_of_ko7_not_ko_center(self):
+        #stone with no liberty from 2's position was not played in the last move
+        move = (2, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 1,-1, 0],
+                      [ 1,-1, 0,-1],
+                      [ 0, 1,-1, 0]]
+        game_history = [(1, 1, 1), (-1, 1, 2), (1, 2, 2), (-1, 2, 3), (1, 3, 1), (-1, 3, 2), (1, 2, 0), (-1, 2, 1),
+                        (1, -1, -1), (-1, -1, -1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+        self.assertFalse(is_invalid_move_because_of_ko(board, move))
+
 if __name__ == '__main__':
     unittest.main()
