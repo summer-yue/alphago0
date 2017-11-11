@@ -161,6 +161,38 @@ class GoUtilsTest(unittest.TestCase):
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
         self.assertEqual(make_move(board, move), new_board)
 
+    def test_make_move_valid_move_no_ko(self):
+        move = (1, 2)
+        board_grid = [[ 0, 1,-1, 1],
+                      [ 1,-1, 0,-1],
+                      [ 0, 1,-1, 0],
+                      [ 0, 0, 0, 0]]
+        game_history = [(1, 1, 0), (-1, 0, 2), (1, 0, 1), (-1, 2, 2), (1, 2, 1), (-1, 1, 3), (1, 0, 3), (-1, 1, 1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+
+        new_board_grid = [[ 0, 1, 0, 1],
+                          [ 1, 0, 1,-1],
+                          [ 0, 1,-1, 0],
+                          [ 0, 0, 0, 0]]
+        new_game_history = [(1, 1, 0), (-1, 0, 2), (1, 0, 1), (-1, 2, 2), (1, 2, 1), (-1, 1, 3), (1, 0, 3), (-1, 1, 1), (1, 1, 2)]
+        new_board = gb.go_board(board_dimension=4, player=-1, board_grid = new_board_grid, game_history = new_game_history)
+ 
+        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(new_board, board)
+
+    def test_make_move_invalid_move_ko(self):
+        move = (2, 2)
+        board_grid = [[ 0, 0, 0, 0],
+                      [ 0, 1,-1, 0],
+                      [ 1,-1, 0,-1],
+                      [ 0, 1,-1, 0]]
+        game_history = [(1, 2, 0), (-1, 2, 3), (1, 1, 1), (-1, 1, 2), (1, 2, 2), (-1, 3, 2), (1, 3, 1), (-1, 2, 1)]
+        board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
+
+        new_board = board.copy()
+        self.assertEqual(make_move(board, move), None)
+        self.assertEqual(new_board, board)
+
     def test_find_adjacent_positions_with_same_color_1(self):
         position = (1, 1)
         board_grid = [[ 0, 1, 0, 0],

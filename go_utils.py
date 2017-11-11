@@ -9,7 +9,6 @@ def make_move(board, move):
         new board config if the move was successfully placed
         None if move was invalid
     """
-
     #Pass (-1, -1) is a valid move
     if is_move_pass(move):
         board.game_history.append((board.player, -1, -1)) #Add a pass move to history
@@ -204,6 +203,11 @@ def is_invalid_move_because_of_ko(board, move):
     2. and the for all of the adjacent opponent stones, only one of them has no liberty after this move
     3. and the one stone from 2 is not connected to any other stones
     4. and the stone with no liberty from 2's position was played in the last move
+    Args:
+        board: current board config including whose turn it is
+        move: (row, col) tuple indicating the the location of the current move
+    Returns:
+        Boolean value indicating if the move is invalid because it is a Ko invalid move
     """
     if find_adjacent_positions_with_same_color(move, board.board_grid) == set() and count_liberty(board.board_grid, move) == 0:
         #Condition one passes
@@ -230,6 +234,10 @@ def is_invalid_move_because_of_ko(board, move):
 
 def is_move_pass(move):
     """Check it the move tuple means passs
+    Args:
+        move: tuple indicating the location of the move, or (-1, -1) inidcating a pass
+    Returns:
+        a boolean value indiating if the move is a pass
     """
     return move == (-1, -1)
 
@@ -238,6 +246,8 @@ def is_move_in_board(move, board_dimension):
     Args:
         move: (r, c) tuple indicating the position of the considered move
         board_dimension: the vertical and horizontal dimension of the Go board
+    Returns:
+        boolean value indicating if the move is inside of the board range
     """
     (r,c) = move
     if r < 0 or c < 0 or r >= board_dimension or c >= board_dimension:
