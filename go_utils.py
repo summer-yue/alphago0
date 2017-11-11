@@ -128,6 +128,34 @@ def find_adjacent_positions_with_same_color(position, board_grid):
         neighbors.add((r, c + 1))
     return neighbors
 
+def find_adjacent_positions_with_opposite_color(position, board_grid):
+    """Find the opposing stones directly to the right, left, top or down of 
+    a stone on a board. Return a list of them in the order of up, down, left, right.
+    Args:
+        position: (r, c) the position we're trying to find neighbors for
+        board_grid: 2d array representation of the board
+    Returns:
+        an set of positions tuples that are immediately next to the original position with the opposite color
+    """
+    neighbors = set()
+    (r, c) = position
+    player = board_grid[r][c]
+    board_dimension = len(board_grid)
+
+    #top
+    if r > 0 and board_grid[r - 1][c] == -player:
+        neighbors.add((r - 1, c))
+    #bottom
+    if r < board_dimension - 1 and board_grid[r + 1][c] == -player:
+        neighbors.add((r + 1, c))
+    #left
+    if c > 0 and board_grid[r][c - 1] == -player:
+        neighbors.add((r, c - 1))
+    #right
+    if c < board_dimension - 1 and board_grid[r][c + 1] == -player:
+        neighbors.add((r, c + 1))
+    return neighbors
+
 def count_liberty_for_one_stone(board_grid, position):
     """Count the liberties associated with one stone on the board,
     in other words, the adjacent empty crosses
@@ -172,13 +200,33 @@ def count_liberty(board_grid, position):
 
 def is_invalid_move_because_of_ko(board, move):
     """Detect if a move if invalid due to the ko condition
-    1. the current stone is surrounded by 4 opponents in all directions not on the border
+    1. the current stone is surrounded by opponents in all directions not on the border (no neighbor with the same color and no liberty)
     2. and the for all of the adjacent opponent stones, only one of them has no liberty after this move
     3. and the one stone from 2 is not connected to any other stones
     4. and the stone with no liberty from 2's position was played in the last move
     """
-    #TODO
-    pass
+    if find_adjacent_positions_with_same_color(move, board.board_grid) == set() and count_liberty(board.board_grid, move) == 0:
+        #Condition one passes
+        board_copy = board.copy()
+        (r, c) = move
+        #Place the stone temporarily on the board_copy board without considering any go rules
+        board_copy.board_grid[r][c] = board_copy.player
+        dead_neighbor_num = 0
+        neighbor_opponent_dead_due_to_move = None
+        for neighbor_opponent in find_adjacent_positions_with_opposite_color(move, board.board_grid):
+            if count_liberty(board_copy.board_grid, neighbor_opponent) == 0:
+                dead_neighbor_num += 1
+                neighbor_opponent_dead_due_to_move = neighbor_opponent
+        if (dead_neighbor_num == 1):
+            #Condition 2 passes
+            if len(find_pieces_in_group(neighbor_opponent_dead_due_to_move, board_copy.board_grid)) == 1:
+                #Condition 3 passes
+                last_move = board.game_history[len(board.game_history) - 1]
+                #The logic for this check is due to the 3 element tuple format stored in history and the two element tuple in neighbor_opponent_dead_due_to_move
+                if neighbor_opponent_dead_due_to_move[0] == last_move[1] and neighbor_opponent_dead_due_to_move[1] == last_move[2] :
+                    #Condition 4 passes
+                    return True
+    return False
 
 def is_move_pass(move):
     """Check it the move tuple means passs
