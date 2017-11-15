@@ -42,7 +42,7 @@ def find_connected_empty_pieces(board_grid):
         second element is a list of tuples indicating these empty pieces' locations(1, [(2,2),(3,3)])
     """
     connected_empty_pieces_and_player = [] #Value to be returned
-
+    border_stone_nums = {}
     border_stone_nums[BLACK] = 0
     border_stone_nums[WHITE] = 0 #This tracks the distribution of stones bordering this empty territory
 
@@ -59,27 +59,32 @@ def find_connected_empty_pieces(board_grid):
     #Outer loop makes sure that all 
     while current_position != None:
         
-        frontier = deque(current_position)
-        while (len(frontier) > 0): #frontier is not empty 
+        frontier = deque()
+        frontier.append(current_position)
+        while (len(frontier) > 0): #frontier is not empty
             current_position = frontier.popleft()  
             current_group.append(current_position)
-            visited.add(current_position)
+            visited[current_position] = True
 
             #Go to its neighbors, if it's a stone, update border_stone_nums, otherwise add to frontier
             for neighbor in find_direct_neighbors(current_position, board_grid):
                 (neighbor_r, neighbor_c) = neighbor
                 if board_grid[neighbor_r][neighbor_c] == 0:
-                    frontier.append(neighbor)
+                    if visited[neighbor] == False and neighbor not in frontier:
+                        frontier.append(neighbor)
                 else:
                     border_stone_nums[board_grid[neighbor_r][neighbor_c]] += 1
 
-        #Put the group we found in the returning array 
+        #Put the group we found in the returning array
         if border_stone_nums[BLACK] > 0 and border_stone_nums[WHITE] == 0:
             connected_empty_pieces_and_player.append((BLACK, current_group))
-        else if border_stone_nums[WHITE] > 0 and border_stone_nums[BLACK] == 0: 
+        elif border_stone_nums[WHITE] > 0 and border_stone_nums[BLACK] == 0: 
             connected_empty_pieces_and_player.append((WHITE, current_group)) 
         else:
             connected_empty_pieces_and_player.append((0, current_group))
+        current_group = []
+        border_stone_nums[BLACK] = 0
+        border_stone_nums[WHITE] = 0
         current_position = get_next_empty_space_to_visit(visited)
 
     return connected_empty_pieces_and_player
