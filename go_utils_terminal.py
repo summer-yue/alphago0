@@ -5,14 +5,14 @@ from collections import deque
 BLACK = 1
 WHITE = -1
 
-def evaluate_winner(board):
+def evaluate_winner(board_grid):
     """Evaluate who is the winner of the board configuration
     Args:
-        board: current board: including dimensionm grid, player and history
+        board_grid: 2d array representation of the board
     Returns:
         player who won the game. 1: black or -1: white
     """
-    new_board = remove_captured_stones(board)
+    new_board = remove_captured_stones(board_grid)
     black_score = 0
     white_score = 0
 
@@ -24,9 +24,11 @@ def evaluate_winner(board):
             white_score += len(empty_pieces_positions)
     
     #Count the remaining stones for each side
-    black_score += count_stones(board.board_grid, player=BLACK)
-    white_score += count_stones(board.board_grid, player=WHITE)
+    black_score += count_stones(board_grid, player=BLACK)
+    white_score += count_stones(board_grid, player=WHITE)
 
+    # print("black score is " + str(black_score))
+    # print("white score is " + str(white_score))
     if black_score > white_score:
         return BLACK
     else:
@@ -107,9 +109,9 @@ def remove_captured_stones(board_grid):
         board_grid: 2d array representation of the board
     Returns:
         new_board with the removed stones
-    TODO
+    TODO implement
     """
-    pass
+    return board_grid
 
 def count_stones(board_grid, player):
     """Count the total number of stones on the board that belong to a certain player
