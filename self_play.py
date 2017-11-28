@@ -24,7 +24,8 @@ class self_play():
            Returns:
                 Boolean value indicating if a move was placed
         """
-        pass
+        move = self.nn.play_with_mcts()
+        return move != (-1, -1)
 
     def play_till_finish(self):
         """Play until the game reaches a final state (2 passes happen one after another)

@@ -11,7 +11,7 @@ class MCTS():
             self.root_node: the root node for MCTS simluations
         """
         self.simluation_number_remaining = simluation_number
-        self.root_node = Node(board, parent_edge = None, edges = [])
+        self.root_node = node(board, parent_edge = None, edges = [])
 
     def run_one_simluation(self):
         """Run one simluation within MCTS including select, expand leaf node and backup
