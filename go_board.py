@@ -28,6 +28,9 @@ class go_board():
         else:
             self.player = 1
 
+    def add_move_to_history(self, r, c):
+        self.game_history.append((self.player, r, c))
+
     def copy(self):
         """Make a deep copy of the go board
         Returns:
