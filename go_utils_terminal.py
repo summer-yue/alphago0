@@ -30,9 +30,9 @@ def evaluate_winner(board_grid):
     # print("black score is " + str(black_score))
     # print("white score is " + str(white_score))
     if black_score > white_score:
-        return BLACK
+        return BLACK, abs(black_score - white_score)
     else:
-        return WHITE
+        return WHITE, abs(black_score - white_score)
 
 def find_connected_empty_pieces(board_grid):
     """Find the groups of connected empty pieces on the board and infer whose territory they are
