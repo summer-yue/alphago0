@@ -85,6 +85,7 @@ class Go:
     def start(self):
         self._playing = True
         self.lastPosition = [-1,-1]
+        self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
         self._win = False
 
     def surrender(self):

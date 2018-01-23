@@ -50,11 +50,8 @@ def make_move(board, move):
         board_copy.board_grid = remove_pieces_if_no_liberty((r, c + 1), board_copy.board_grid)
 
     #Invalid move if current move would cause the current connected group to have 0 liberty
-    # print("liberties for the current group")
-    # print(count_liberty(board.board_grid, move))
+
     if count_liberty(board_copy.board_grid, move) == 0:
-        print("liberty is 0")
-        print(board)
         return board
     
     #After a move is successfully made, update the board to reflect that and return
@@ -223,7 +220,8 @@ def is_invalid_move_because_of_ko(board, move):
         board_copy.board_grid[r][c] = board_copy.player
         dead_neighbor_num = 0
         neighbor_opponent_dead_due_to_move = None
-        for neighbor_opponent in find_adjacent_positions_with_opposite_color(move, board.board_grid):
+
+        for neighbor_opponent in find_adjacent_positions_with_opposite_color(move, board_copy.board_grid):
             if count_liberty(board_copy.board_grid, neighbor_opponent) == 0:
                 dead_neighbor_num += 1
                 neighbor_opponent_dead_due_to_move = neighbor_opponent
