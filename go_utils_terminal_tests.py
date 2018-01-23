@@ -51,7 +51,7 @@ class GoUtilsTerminalTest(unittest.TestCase):
                        [0, 0, 1,-1,-1],
                        [0, 1,-1, 0, 0],
                        [1,-1, 0, 0, 0]]
-        self.assertEqual(evaluate_winner(board_grid), -1) #white 14 black 11
+        self.assertEqual(evaluate_winner(board_grid), (-1, 3)) #white 14 black 11
 
     def test_evaluate_winner_2(self):
         board_grid = [ [0, 1,-1, 0, 0],
@@ -59,7 +59,7 @@ class GoUtilsTerminalTest(unittest.TestCase):
                        [0, 1, 0,-1,-1],
                        [0, 1,-1, 0, 0],
                        [1,-1, 0, 0, 0]]
-        self.assertEqual(evaluate_winner(board_grid), -1) #white 14 black 9
+        self.assertEqual(evaluate_winner(board_grid), (-1, 5)) #white 14 black 9
 
 if __name__ == '__main__':
     unittest.main()

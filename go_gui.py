@@ -1,6 +1,7 @@
 import pygame
 import go_board as gb
 import go_utils
+import go_utils_terminal
 from pygame.locals import *
 
 BOARD_DIM = 9 # Define an x by x board
@@ -58,6 +59,7 @@ class Go:
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
                     self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
              
         # print(self.go_board)
@@ -182,6 +184,13 @@ class Go:
                               (MARGIN + WIDTH) * self.lastPosition[1] + (MARGIN + WIDTH) // 2, 
                               (MARGIN + WIDTH), 
                               (MARGIN + WIDTH)),1)
+
+    def print_winner(self):
+        winner, winning_by_points = go_utils_terminal.evaluate_winner(self.go_board.board_grid)
+        if winner == PLAYER_BLACK:
+            print ("Black wins by " + str(winning_by_points))
+        else:
+            print ("White wins by " + str(winning_by_points))
 
 if __name__ == "__main__" :
     go = Go()
