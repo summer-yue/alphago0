@@ -7,13 +7,13 @@ Training Residual Net <br />
 Self Play <br />
 Monte Carlo Tree Search <br />
 
-## Step 1a:
+## Step 1a: FINIHSHED
 Implement Go rules to detect invalid moves (go_utils.py)
-## Step 1b:
+## Step 1b: TESTING
 Implement Go rules to decide the winner for the game according to the Go board (go_utils.py)
-## Step 1c:
+## Step 1c: TESTING
 Construct a res net structure in tensorflow that trains based on labels (p, v) for a board. (alphgo_zero.py)
-## Step 1d:
+## Step 1d: HUMAN HUMAN MODE FINISHED
 This can be done in a separate thread of our work.
 Implement the game GUI(gui.py)
 
