@@ -1,5 +1,6 @@
 import pygame
 import go_board as gb
+import go_utils
 from pygame.locals import *
 
 BOARD_DIM = 9 # Define an x by x board
@@ -56,14 +57,11 @@ class Go:
                 c = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
-                    if self.go_board.board_grid[r][c] == 0:
-                        self.lastPosition = [r,c]
-                        self.go_board.add_move_to_history(r, c)
-                        self.go_board.board_grid[r][c] = self.go_board.player
-                        self.go_board.flip_player()
-
-        print(self.go_board)
-        print()
+                    self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    self.lastPosition = self.go_board.get_last_position()
+             
+        # print(self.go_board)
+        # print()
     
     def on_render(self):
         self.render_go_piece()
@@ -71,7 +69,6 @@ class Go:
         self.render_game_info()
         self.render_button()
         pygame.display.update()
-
 
     def on_cleanup(self):
         pygame.quit()
@@ -161,6 +158,8 @@ class Go:
     def render_go_piece(self):
         """ Render the Go stones on the board according to self.go_board
         """
+        # print('rendering go pieces')
+        # print(self.go_board)
         for r in range(BOARD_DIM):
             for c in range(BOARD_DIM):
                 center = ((MARGIN + WIDTH) * r + MARGIN + PADDING,

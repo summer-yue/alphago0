@@ -7,55 +7,61 @@ def make_move(board, move):
         move: (r, c) tuple indicating the position of the considered move
     Returns:
         new board config if the move was successfully placed
-        None if move was invalid
+        old config if board is not updated
     """
+
+    board_copy = board.copy()
     #Pass (-1, -1) is a valid move
     if is_move_pass(move):
-        board.game_history.append((board.player, -1, -1)) #Add a pass move to history
-        board.flip_player() #The other player's turn
-        return board
+        board_copy.game_history.append((board_copy.player, -1, -1)) #Add a pass move to history
+        board_copy.flip_player() #The other player's turn
+        return board_copy
 
     #Not valid if placed outside of a board
-    if not is_move_in_board(move, board.board_dimension):
-        return None
+    if not is_move_in_board(move, board_copy.board_dimension):
+        return board
 
     (r, c) = move
 
     #Invalid move if placed on top of another existing stone
-    if board.board_grid[r][c] != 0:
-        return None
+    if board_copy.board_grid[r][c] != 0:
+        return board
 
     #Invalid move because of Ko restrictions, this condition is checked before the liberty constraint
-    if is_invalid_move_because_of_ko(board, move):
-        return None
+    if is_invalid_move_because_of_ko(board_copy, move):
+        return board
 
     #Invalid move if placed in a spot that forms a group of stones with no liberty
-    #Try making the move on a copied board and check if anything illegal is detected
-    board.board_grid[r][c] = board.player
+    board_copy.board_grid[r][c] = board_copy.player
 
     #Remove the stones captured because of this move
     #Remove the groups of the stones that belong to the opponent directly next to current move
     #top
-    if r > 0 and board.board_grid[r - 1][c] == -board.player:
-        board.board_grid = remove_pieces_if_no_liberty((r - 1, c), board.board_grid)
+    if r > 0 and board_copy.board_grid[r - 1][c] == -board_copy.player:
+        board_copy.board_grid = remove_pieces_if_no_liberty((r - 1, c), board_copy.board_grid)
     #bottom
-    if r < board.board_dimension - 1 and board.board_grid[r + 1][c] == -board.player:
-        board.board_grid = remove_pieces_if_no_liberty((r + 1, c), board.board_grid)
+    if r < board_copy.board_dimension - 1 and board_copy.board_grid[r + 1][c] == -board_copy.player:
+        board_copy.board_grid = remove_pieces_if_no_liberty((r + 1, c), board_copy.board_grid)
     #left
-    if c > 0 and board.board_grid[r][c - 1] == -board.player:
-        board.board_grid = remove_pieces_if_no_liberty((r, c - 1), board.board_grid)
+    if c > 0 and board_copy.board_grid[r][c - 1] == -board_copy.player:
+        board_copy.board_grid = remove_pieces_if_no_liberty((r, c - 1), board_copy.board_grid)
     #right
-    if c < board.board_dimension - 1 and board.board_grid[r][c + 1] == -board.player:
-        board.board_grid = remove_pieces_if_no_liberty((r, c + 1), board.board_grid)
+    if c < board_copy.board_dimension - 1 and board_copy.board_grid[r][c + 1] == -board_copy.player:
+        board_copy.board_grid = remove_pieces_if_no_liberty((r, c + 1), board_copy.board_grid)
 
     #Invalid move if current move would cause the current connected group to have 0 liberty
-    if count_liberty_for_one_stone(board.board_grid, move) == 0:
-        return None
-
+    # print("liberties for the current group")
+    # print(count_liberty(board.board_grid, move))
+    if count_liberty(board_copy.board_grid, move) == 0:
+        print("liberty is 0")
+        print(board)
+        return board
+    
     #After a move is successfully made, update the board to reflect that and return
-    board.game_history = board.game_history + [(board.player, r, c)]
-    board.player = -board.player
-    return board
+    board_copy.game_history = board_copy.game_history + [(board_copy.player, r, c)]
+    board_copy.flip_player()
+
+    return board_copy
 
 def remove_pieces_if_no_liberty(position, board_grid):
     """Look at the pieces that form the group of position
@@ -66,7 +72,7 @@ def remove_pieces_if_no_liberty(position, board_grid):
     Returns:
         new_board_grid: the new grid after removal of elements
     """
-    if count_liberty_for_one_stone(board_grid, position) == 0:
+    if count_liberty(board_grid, position) == 0:
         pieces_in_group = find_pieces_in_group(position, board_grid)
     else:
         return board_grid
