@@ -23,7 +23,7 @@ class MCTS():
         when initializing the object. Returns a policy pi for board's next move
         according to these simluations
         Returns:
-            pi: the policy for next moves according to simluations, a vector with length
+            pi: the policy for next moves according to simluations, an array of tuples (move, probabilities) with length
             board_dimension ** 2 + 1
         """
         pass
