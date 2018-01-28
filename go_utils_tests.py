@@ -17,7 +17,7 @@ class GoUtilsTest(unittest.TestCase):
     def test_make_move_invalid_not_in_board(self):
         move = (-1,1)
         board = gb.go_board(board_dimension=9, player= 1, board_grid = None, game_history = None)
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_make_move_invalid_on_another_stone_no_capture(self):
         move = (0, 1)
@@ -27,7 +27,7 @@ class GoUtilsTest(unittest.TestCase):
                       [ 0, 0, 0, 0]]
         game_history = [( 1, 0, 1)]
         board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_make_move_invalid_move_into_an_eye(self):
         move = (3, 0)
@@ -37,7 +37,7 @@ class GoUtilsTest(unittest.TestCase):
                       [ 0, 1, 0, 0]]
         game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1)]
         board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_make_move_invalid_move_into_an_eye_2(self):
         move = (1, 0)
@@ -47,7 +47,7 @@ class GoUtilsTest(unittest.TestCase):
                       [ 0, 0, 0, 0]]
         game_history = [( 1, 0, 0), (-1, -1, -1), ( 1, 1, 1), (-1, -1, -1), ( 1, 2, 0)]
         board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_make_move_invalid_move_into_an_eye_3(self):
         move = (1, 0)
@@ -58,7 +58,7 @@ class GoUtilsTest(unittest.TestCase):
         game_history = [( 1, 1, 0), (-1, -1, -1), ( 1, 0, 1), (-1, -1, -1), ( 1, 1, 2),
             (-1, -1, -1), ( 1, 2, 1)]
         board = gb.go_board(board_dimension=4, player=-1, board_grid = board_grid, game_history = game_history)
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_make_move_valid_move_capture_stone_1(self):
         move = (3, 0)
@@ -75,7 +75,7 @@ class GoUtilsTest(unittest.TestCase):
                           [-1, 1, 0, 0]]
         new_game_history = game_history + [(-1, 3, 0)]
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_capture_stone_2(self):
         move = (2, 0)
@@ -92,7 +92,7 @@ class GoUtilsTest(unittest.TestCase):
                           [ 0,-1, 0, 0]]
         new_game_history = game_history + [(-1, 2, 0)]
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_capture_stone_3(self):
         move = (2, 0)
@@ -109,7 +109,7 @@ class GoUtilsTest(unittest.TestCase):
                           [ 0,-1, 0, 0]]
         new_game_history = game_history + [(-1, 2, 0)]
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_capture_stone_4(self):
         move = (3, 2)
@@ -127,7 +127,7 @@ class GoUtilsTest(unittest.TestCase):
                           [ 0, 0,-1, 0]]
         new_game_history = game_history + [(-1, 3, 2)]
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_capture_stone_5(self):
         move = (0, 0)
@@ -145,7 +145,7 @@ class GoUtilsTest(unittest.TestCase):
                           [ 0,-1, 0, 0]]
         new_game_history = game_history + [(-1, 0, 0)]
         new_board = gb.go_board(board_dimension=4, player=1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_pass(self):
         move = (-1, -1)
@@ -159,7 +159,7 @@ class GoUtilsTest(unittest.TestCase):
         new_board_grid = board_grid
         new_game_history = [( 1, 2, 0), (-1, 1, 0), ( 1, 3, 1), (-1, -1, -1)]
         new_board = gb.go_board(board_dimension=4, player= 1, board_grid = new_board_grid, game_history = new_game_history)
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
 
     def test_make_move_valid_move_no_ko(self):
         move = (1, 2)
@@ -177,7 +177,7 @@ class GoUtilsTest(unittest.TestCase):
         new_game_history = [(1, 1, 0), (-1, 0, 2), (1, 0, 1), (-1, 2, 2), (1, 2, 1), (-1, 1, 3), (1, 0, 3), (-1, 1, 1), (1, 1, 2)]
         new_board = gb.go_board(board_dimension=4, player=-1, board_grid = new_board_grid, game_history = new_game_history)
  
-        self.assertEqual(make_move(board, move), new_board)
+        self.assertEqual(make_move(board, move), (True, new_board))
         self.assertNotEqual(new_board, board)
 
     def test_make_move_invalid_move_ko(self):
@@ -189,7 +189,7 @@ class GoUtilsTest(unittest.TestCase):
         game_history = [(1, 2, 0), (-1, 2, 3), (1, 1, 1), (-1, 1, 2), (1, 2, 2), (-1, 3, 2), (1, 3, 1), (-1, 2, 1)]
         board = gb.go_board(board_dimension=4, player=1, board_grid = board_grid, game_history = game_history)
 
-        self.assertEqual(make_move(board, move), board)
+        self.assertEqual(make_move(board, move), (False, board))
 
     def test_find_adjacent_positions_with_same_color_1(self):
         position = (1, 1)

@@ -3,9 +3,10 @@ from collections import deque
 def make_move(board, move):
     """Make a move (row,col) on a go board
     Args:
-        board: current board: including dimensionm grid, player and history
+        board: current board: including dimension grid, player and history
         move: (r, c) tuple indicating the position of the considered move
     Returns:
+        A tuple indicating board config and if the move was valid (boolean value)
         new board config if the move was successfully placed
         old config if board is not updated
     """
@@ -15,21 +16,21 @@ def make_move(board, move):
     if is_move_pass(move):
         board_copy.game_history.append((board_copy.player, -1, -1)) #Add a pass move to history
         board_copy.flip_player() #The other player's turn
-        return board_copy
+        return True, board_copy
 
     #Not valid if placed outside of a board
     if not is_move_in_board(move, board_copy.board_dimension):
-        return board
+        return False, board
 
     (r, c) = move
 
     #Invalid move if placed on top of another existing stone
     if board_copy.board_grid[r][c] != 0:
-        return board
+        return False, board
 
     #Invalid move because of Ko restrictions, this condition is checked before the liberty constraint
     if is_invalid_move_because_of_ko(board_copy, move):
-        return board
+        return False, board
 
     #Invalid move if placed in a spot that forms a group of stones with no liberty
     board_copy.board_grid[r][c] = board_copy.player
@@ -52,13 +53,13 @@ def make_move(board, move):
     #Invalid move if current move would cause the current connected group to have 0 liberty
 
     if count_liberty(board_copy.board_grid, move) == 0:
-        return board
+        return False, board
     
     #After a move is successfully made, update the board to reflect that and return
     board_copy.game_history = board_copy.game_history + [(board_copy.player, r, c)]
     board_copy.flip_player()
 
-    return board_copy
+    return True, board_copy
 
 def remove_pieces_if_no_liberty(position, board_grid):
     """Look at the pieces that form the group of position

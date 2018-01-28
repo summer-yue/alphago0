@@ -58,7 +58,7 @@ class Go:
                 c = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
-                    self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
                     self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
              

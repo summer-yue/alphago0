@@ -1,5 +1,5 @@
 class node():
-    def __init__(self, go_board, parent_edge, edges):
+    def __init__(self, go_board, parent_edge, edges, action_value):
         """A node in the MCTS algorithm containing information about the board, 
         and its incoming and outcoming edges
         Args:
@@ -10,3 +10,4 @@ class node():
         self.go_board = go_board
         self.parent_edge = parent_edge
         self.edges = edges
+        self.action_value = action_value

@@ -44,7 +44,7 @@ class self_play():
                 True if the player passed, False otherwise
         """
 
-        ts_instance = mcts.MCTS(self.current_board)
+        ts_instance = mcts.MCTS(self.current_board, self.nn)
         next_move_policy = ts_instance.run_all_simulations()
 
         move = self.find_most_likely_move(next_move_policy)
