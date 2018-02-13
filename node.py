@@ -11,3 +11,14 @@ class node():
         self.parent_edge = parent_edge
         self.edges = edges
         self.action_value = action_value
+
+    def get_edge_info(self):
+        return str([str(edge) for edge in self.edges])
+
+    def is_leaf(self):
+        return self.edges == []
+
+    def __str__(self):
+        return "On Node \n Number of outgoing edges: " \
+            + str(len(self.edges)) + "\n  action_value:" + str(self.action_value) \
+            + "\n board looks like" + str(self.go_board.board_grid)

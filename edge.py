@@ -17,3 +17,13 @@ class edge():
         self.N = N
         self.P = P
         self.move = move
+
+    def __str__(self):
+        return "NEW EDGE: W (sum of values of all explored children nodes): " + str(self.W) + " \n  " \
+            + "Q (mean values of all explored children nodes): " + str(self.Q) + " \n  " \
+            + "N (number of times the move has been visited): " + str(self.N) + " \n  " \
+            + "P ( probability assigned by the nn to make this move): " + str(self.P) + " \n" \
+            + "  Parent board:" + str(self.from_node.go_board.board_grid)  + " \n" \
+            + "  Child board:" + str(self.to_node.go_board.board_grid) 
+
+
