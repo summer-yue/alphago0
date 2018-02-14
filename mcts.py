@@ -69,10 +69,11 @@ class MCTS():
         #Now current_node is a leaf node with no outgoing edges
 
         #expand and evaluate
-        potential_next_moves = []
+        potential_next_moves = [(-1, -1)]
         current_board = current_node.go_board
 
         (move_p_dist, v) = self.nn.predict(current_board)
+
         for (next_move, p) in move_p_dist:
 
             is_move_valid, new_board = go_utils.make_move(current_board, next_move)
