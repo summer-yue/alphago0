@@ -4,7 +4,7 @@ import go_utils
 import go_utils_terminal
 from pygame.locals import *
 
-BOARD_DIM = 9 # Define an x by x board
+BOARD_DIM = 2 # Define an x by x board
 
 # Define colors
 BLACK  = (0, 0, 0)
@@ -54,8 +54,8 @@ class Go:
                     self.go_board.flip_player()
 
             elif self._playing:
-                r = (pos[0] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
-                c = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
+                c = (pos[0] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
+                r = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
                     _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
@@ -165,8 +165,8 @@ class Go:
         # print(self.go_board)
         for r in range(BOARD_DIM):
             for c in range(BOARD_DIM):
-                center = ((MARGIN + WIDTH) * r + MARGIN + PADDING,
-                          (MARGIN + WIDTH) * c + MARGIN + PADDING)
+                center = ((MARGIN + WIDTH) * c + MARGIN + PADDING,
+                          (MARGIN + WIDTH) * r + MARGIN + PADDING)
                 if self.go_board.board_grid[r][c] != EMPTY:
                     color = BLACK if self.go_board.board_grid[r][c] == PLAYER_BLACK else WHITE
                     pygame.draw.circle(self._display_surf, color,

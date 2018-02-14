@@ -1,3 +1,5 @@
+import mcts
+
 class self_play():
     """Algorithm plays against itself till the game ends and produce a set of (board, policy, result)
     Used as training data for the res net.
@@ -18,24 +20,6 @@ class self_play():
         self.moves = {}
         self.history_boards = [] #Records all the board config played in this self play session
 
-    def find_most_likely_move(self, policy):
-        """Return the move tuple that represents the best move according to a policy
-        Args:
-            policy: an array of tuples (move, probabilities) with length
-            board_dimension ** 2 + 1 (pass)
-        Return:
-            best_move: (r, c) tuple representing the best nect move position
-        """
-        best_move = None
-        highest_prob = 0
-
-        for (move, p) in policy:
-            if p > highest_prob:
-                best_move = move
-                highest_prob = p
-
-        return best_move
-
     def play_one_move(self):
         """Use MCTS to calculate the pi for current node, 
            update self.moves and current node
@@ -45,12 +29,12 @@ class self_play():
         """
 
         ts_instance = mcts.MCTS(self.current_board, self.nn)
-        next_move_policy = ts_instance.run_all_simulations()
+        new_board, move = ts_instance.run_all_simulations()
 
-        move = self.find_most_likely_move(next_move_policy)
+        print("move is:", move)
 
         self.history_boards.append(self.current_board) #Save current board to history
-        self.current_board = go_utils.make_move(self.current_board, move) #Update current board to board after move
+        self.current_board = new_board #Update current board to board after move
 
         return move == (-1, -1)
 

@@ -30,6 +30,7 @@ def make_move(board, move):
 
     #Invalid move because of Ko restrictions, this condition is checked before the liberty constraint
     if is_invalid_move_because_of_ko(board_copy, move):
+        print("Invalid because of Ko")
         return False, board
 
     #Invalid move if placed in a spot that forms a group of stones with no liberty
@@ -103,7 +104,7 @@ def find_pieces_in_group(position, board_grid):
                 queue.append(neighbor)
     return group_members
 
-def find_adjacent_positions_with_same_color(position, board_grid):
+def find_adjacent_positions_with_same_color(position, board_grid, current_player=None):
     """Find the stones directly to the right, left, top or down of 
     a stone on a board. Return a list of them in the order of up, down, left, right.
     Args:
@@ -114,7 +115,10 @@ def find_adjacent_positions_with_same_color(position, board_grid):
     """
     neighbors = set()
     (r, c) = position
-    player = board_grid[r][c]
+    if current_player != None:
+        player = current_player
+    else:
+        player = board_grid[r][c]
     board_dimension = len(board_grid)
 
     #top
@@ -213,7 +217,7 @@ def is_invalid_move_because_of_ko(board, move):
     Returns:
         Boolean value indicating if the move is invalid because it is a Ko invalid move
     """
-    if find_adjacent_positions_with_same_color(move, board.board_grid) == set() and count_liberty(board.board_grid, move) == 0:
+    if find_adjacent_positions_with_same_color(move, board.board_grid, board.player) == set() and count_liberty(board.board_grid, move) == 0:
         #Condition one passes
         board_copy = board.copy()
         (r, c) = move

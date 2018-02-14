@@ -120,6 +120,7 @@ class MCTS():
         root_edges = self.root_node.edges
         most_used_edge = None
         most_explored_time = 0
+        print(len(root_edges))
         for edge in root_edges:
             if edge.N > most_explored_time:
                 most_explored_time = edge.N
