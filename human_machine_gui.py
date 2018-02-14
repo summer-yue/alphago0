@@ -2,7 +2,11 @@ import pygame
 import go_board as gb
 import go_utils
 import go_utils_terminal
+import fake_alphago_zero
+import self_play
 from pygame.locals import *
+
+# Assume human is black and machine is white
 
 BOARD_DIM = 9 # Define an x by x board
 
@@ -27,6 +31,8 @@ BOARD = (WIDTH + MARGIN) * (BOARD_DIM - 1) + MARGIN # Actual width for the board
 GAME_WIDTH = BOARD + PADDING * 2
 GAME_HIGHT = GAME_WIDTH + 100
 
+nn = fake_alphago_zero.Fake_AlphaGo_Zero()
+
 class Go:
     def __init__(self):
         self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
@@ -43,6 +49,17 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
+
+    def machine_responds(self):
+        self_play_instance = self_play.self_play(self.go_board, nn)
+        if self_play_instance.play_one_move(): # Machine passes
+            if self.passed_once == True:
+                print("Game Over!")
+                self.game_over = True
+        else:
+            self.passed_once = False
+
+        self.go_board = self_play_instance.current_board
 
     def on_event(self, event):
         if event.type == pygame.QUIT:
@@ -64,6 +81,12 @@ class Go:
                 _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
                 if not self.passed_once:
                     self.passed_once = True
+                    self.on_render()
+
+                    # Machine plays
+                    self.machine_responds()
+                    self.print_winner()
+                    self.lastPosition = self.go_board.get_last_position()
                 else:
                     # Double Pass Game Over
                     print("Game Over!")
@@ -78,6 +101,12 @@ class Go:
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
                     _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
                     self.passed_once = False
+                    self.print_winner()
+                    self.lastPosition = self.go_board.get_last_position()
+                    self.on_render()
+
+                    # Machine plays
+                    self.machine_responds()
                     self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
              
@@ -193,6 +222,7 @@ class Go:
 
         center = (GAME_WIDTH // 2 - 60, BOARD + 60)
         radius = 12
+
         pygame.draw.circle(self._display_surf, color, center, radius, 0)
 
         if not self.game_over:

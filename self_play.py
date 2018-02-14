@@ -28,7 +28,8 @@ class self_play():
                 True if the player passed, False otherwise
         """
 
-        ts_instance = mcts.MCTS(self.current_board, self.nn)
+        ts_instance = mcts.MCTS(self.current_board, self.nn,  simluation_number = 10)
+        print("Starting to run the simulations")
         new_board, move = ts_instance.run_all_simulations()
 
         print("move is:", move)
