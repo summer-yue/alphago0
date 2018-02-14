@@ -41,6 +41,8 @@ class Go:
         self._win = False
         self.lastPosition = [-1,-1]
         self.pass_button_clicked = False
+        self.passed_once = False
+        self.game_over = False
 
     def on_event(self, event):
         if event.type == pygame.QUIT:
@@ -60,6 +62,13 @@ class Go:
             elif self.mouse_in_pass_button(pos):
                 self.pass_button_clicked = False
                 _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
+                if not self.passed_once:
+                    self.passed_once = True
+                else:
+                    # Double Pass Game Over
+                    print("Game Over!")
+                    self.game_over = True
+
                 self.print_winner()
 
             elif self._playing:
@@ -68,6 +77,7 @@ class Go:
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
                     _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    self.passed_once = False
                     self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
              
@@ -176,12 +186,19 @@ class Go:
 
     def render_game_info(self):
         #current player color
-        color = BLACK if self.go_board.player == PLAYER_BLACK else WHITE
+        if not self.game_over:
+            color = BLACK if self.go_board.player == PLAYER_BLACK else WHITE
+        else:
+            color, win_by_points = self.retrieve_winner()
+
         center = (GAME_WIDTH // 2 - 60, BOARD + 60)
         radius = 12
         pygame.draw.circle(self._display_surf, color, center, radius, 0)
 
-        info = "You Win" if self._win else "Your Turn"
+        if not self.game_over:
+            info = "Wins!" if self._win else "Your Turn"
+        else:
+            info = "wins by " + str(win_by_points) + " points."
         info_font = pygame.font.SysFont('Helvetica', 24)
         text = info_font.render(info, True, BLACK)
         textRect = text.get_rect()
@@ -222,6 +239,9 @@ class Go:
             print ("Black wins by " + str(winning_by_points))
         else:
             print ("White wins by " + str(winning_by_points))
+
+    def retrieve_winner(self):
+        return go_utils_terminal.evaluate_winner(self.go_board.board_grid)
 
 if __name__ == "__main__" :
     go = Go()
