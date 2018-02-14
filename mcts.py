@@ -113,7 +113,7 @@ class MCTS():
             move: the best move generated according to the MCTS simulations
             new_board: board and its configurations after the best move is placed
         """
-        for i in range(self.simluation_number):
+        for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
 
         #Pick the mostly explored edge for root node

@@ -28,7 +28,11 @@ class Fake_AlphaGo_Zero():
                 can_move, _ = go_utils.make_move(board, move)
                 if can_move:
                     available_moves.append(move)
-        prob = 1.0 / (len(available_moves))
+
+        if len(available_moves) > 0:
+            prob = 1.0 / (len(available_moves))
+        else:
+            prob = 0
 
         p = []
         for move in available_moves:

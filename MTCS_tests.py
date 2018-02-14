@@ -29,11 +29,13 @@ class MCTSTest(unittest.TestCase):
         nn = fake_alphago_zero.Fake_AlphaGo_Zero()
         mcts_instance = mcts.MCTS(board, nn, simluation_number = 1000)
 
-        mcts_instance.run_one_simluation()
         # mcts_instance.run_one_simluation()
         # mcts_instance.run_one_simluation()
         # mcts_instance.run_one_simluation()
         # mcts_instance.run_one_simluation()
+        # mcts_instance.run_one_simluation()
+        print(mcts_instance.run_all_simulations())
+        print("FINISHED RUNNING 1000 SIMULATIONS")
         #print(str(mcts_instance.root_node))
         #print("\n")
         
