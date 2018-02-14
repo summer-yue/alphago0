@@ -4,7 +4,7 @@ import go_utils
 import go_utils_terminal
 from pygame.locals import *
 
-BOARD_DIM = 2 # Define an x by x board
+BOARD_DIM = 9 # Define an x by x board
 
 # Define colors
 BLACK  = (0, 0, 0)
@@ -16,6 +16,7 @@ GREEN  = (26, 81, 79)
 PLAYER_BLACK = 1
 PLAYER_WHITE = -1
 EMPTY = 0
+PASS = (-1, -1)
 
 # Define grid globals
 WIDTH = 20 # Width of each square on the board
@@ -39,19 +40,27 @@ class Go:
         self._playing = False
         self._win = False
         self.lastPosition = [-1,-1]
+        self.pass_button_clicked = False
 
     def on_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False
 
-        if event.type == pygame.MOUSEBUTTONUP:
-            pos = pygame.mouse.get_pos()
+        pos = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEBUTTONDOWN and self.mouse_in_pass_button(pos):
+            self.pass_button_clicked = True
+
+        elif event.type == pygame.MOUSEBUTTONUP:
             if self.mouse_in_botton(pos):
                 if not self._playing:
                     self.start()
                 else:
                     self.surrender()
                     self.go_board.flip_player()
+            elif self.mouse_in_pass_button(pos):
+                self.pass_button_clicked = False
+                _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
+                self.print_winner()
 
             elif self._playing:
                 c = (pos[0] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
@@ -70,6 +79,7 @@ class Go:
         self.render_last_position()
         self.render_game_info()
         self.render_button()
+        self.render_pass_button()
         pygame.display.update()
 
     def on_cleanup(self):
@@ -125,7 +135,14 @@ class Go:
     def mouse_in_botton(self,pos):
         """ Check if mouse is in the button and return a boolean value
         """
-        if GAME_WIDTH // 2 - 50 <= pos[0] <= GAME_WIDTH // 2 + 50 and GAME_HIGHT - 50 <= pos[1] <= GAME_HIGHT - 20:
+        if GAME_WIDTH // 4*3 - 50 <= pos[0] <= GAME_WIDTH // 4*3 + 50 and GAME_HIGHT - 50 <= pos[1] <= GAME_HIGHT - 20:
+           return True
+        return False
+
+    def mouse_in_pass_button(self, pos):
+        """ Check if mouse is in the pass button and return a boolean value
+        """
+        if GAME_WIDTH // 4 - 50 <= pos[0] <= GAME_WIDTH // 4 + 50 and GAME_HIGHT - 50 <= pos[1] <= GAME_HIGHT - 20:
            return True
         return False
 
@@ -134,12 +151,26 @@ class Go:
         info = "Start" if not self._playing else "Surrender"
 
         pygame.draw.rect(self._display_surf, color, 
-                         (GAME_WIDTH // 2 - 50, GAME_HIGHT - 50, 100, 30))
+                         (GAME_WIDTH // 4*3 - 50, GAME_HIGHT - 50, 100, 30))
 
         info_font = pygame.font.SysFont('Helvetica', 18)
         text = info_font.render(info, True, WHITE)
         textRect = text.get_rect()
-        textRect.centerx = GAME_WIDTH // 2
+        textRect.centerx = GAME_WIDTH // 4*3
+        textRect.centery = GAME_HIGHT - 35
+        self._display_surf.blit(text, textRect)
+
+    def render_pass_button(self):
+        color = GREEN if not self.pass_button_clicked else YELLOW
+        info = "Pass"
+
+        pygame.draw.rect(self._display_surf, color, 
+                         (GAME_WIDTH // 4 - 50, GAME_HIGHT - 50, 100, 30))
+
+        info_font = pygame.font.SysFont('Helvetica', 18)
+        text = info_font.render(info, True, WHITE)
+        textRect = text.get_rect()
+        textRect.centerx = GAME_WIDTH // 4
         textRect.centery = GAME_HIGHT - 35
         self._display_surf.blit(text, textRect)
 
