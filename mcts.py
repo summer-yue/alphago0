@@ -95,6 +95,15 @@ class MCTS():
                     next_node.parent_edge.Q = next_node.parent_edge.W * 1.0 / next_node.parent_edge.N
                     next_node = next_node.parent_edge.from_node
 
+                    child_node_counter = 0
+                    next_node.action_value = 0
+                    for next_node_edge in next_node.edges:
+                        next_node.action_value += next_node_edge.to_node.action_value
+                        child_node_counter += 1
+                    #print("child_node_counter:", child_node_counter)
+                    #print("next_node.action_value", next_node.action_value)
+                    next_node.action_value /= child_node_counter
+
     def run_all_simulations(self):
         """Run the specified number of simluations according to simluation_number
         when initializing the object. Returns a policy pi for board's next move

@@ -36,19 +36,31 @@ class MCTSTest(unittest.TestCase):
         # mcts_instance.run_one_simluation()
         #print(str(mcts_instance.root_node))
         #print("\n")
-        # print edge info
-        #print(mcts_instance.root_node.get_edge_info())
-
+        
         # Print all leaf nodes in order
         stack = [mcts_instance.root_node]
         while stack != []:
             current_node = stack.pop()
             if current_node.is_leaf():
                 print(current_node.go_board)
+                print(current_node.action_value)
                 print("")
             else:
                 for edge in current_node.edges:
                     stack.append(edge.to_node)
+
+        # print all edges connected to leaf noodes
+        stack = [mcts_instance.root_node]
+        while stack != []:
+            current_node = stack.pop()
+            if current_node.is_leaf():
+                print(current_node.parent_edge)
+                print("")
+            else:
+                for edge in current_node.edges:
+                    stack.append(edge.to_node)
+
+        print(mcts_instance.root_node.action_value)
 
 if __name__ == '__main__':
     unittest.main()
