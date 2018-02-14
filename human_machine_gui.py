@@ -8,7 +8,7 @@ from pygame.locals import *
 
 # Assume human is black and machine is white
 
-BOARD_DIM = 9 # Define an x by x board
+BOARD_DIM = 5 # Define an x by x board
 
 # Define colors
 BLACK  = (0, 0, 0)
@@ -25,7 +25,7 @@ PASS = (-1, -1)
 # Define grid globals
 WIDTH = 20 # Width of each square on the board
 MARGIN = 1 # How thick the lines are
-PADDING = 20 # Distance between board and border of the window
+PADDING = 50 # Distance between board and border of the window
 DOT = 4 # Number of dots
 BOARD = (WIDTH + MARGIN) * (BOARD_DIM - 1) + MARGIN # Actual width for the board
 GAME_WIDTH = BOARD + PADDING * 2
@@ -66,7 +66,7 @@ class Go:
             self._running = False
 
         pos = pygame.mouse.get_pos()
-        if event.type == pygame.MOUSEBUTTONDOWN and self.mouse_in_pass_button(pos):
+        if self._playing and event.type == pygame.MOUSEBUTTONDOWN and self.mouse_in_pass_button(pos):
             self.pass_button_clicked = True
 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -76,7 +76,7 @@ class Go:
                 else:
                     self.surrender()
                     self.go_board.flip_player()
-            elif self.mouse_in_pass_button(pos):
+            elif self.mouse_in_pass_button(pos) and self._playing:
                 self.pass_button_clicked = False
                 _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
                 if not self.passed_once:
@@ -192,7 +192,7 @@ class Go:
         pygame.draw.rect(self._display_surf, color, 
                          (GAME_WIDTH // 4*3 - 50, GAME_HIGHT - 50, 100, 30))
 
-        info_font = pygame.font.SysFont('Helvetica', 18)
+        info_font = pygame.font.SysFont('Helvetica', 16)
         text = info_font.render(info, True, WHITE)
         textRect = text.get_rect()
         textRect.centerx = GAME_WIDTH // 4*3
@@ -206,7 +206,7 @@ class Go:
         pygame.draw.rect(self._display_surf, color, 
                          (GAME_WIDTH // 4 - 50, GAME_HIGHT - 50, 100, 30))
 
-        info_font = pygame.font.SysFont('Helvetica', 18)
+        info_font = pygame.font.SysFont('Helvetica', 16)
         text = info_font.render(info, True, WHITE)
         textRect = text.get_rect()
         textRect.centerx = GAME_WIDTH // 4
@@ -229,7 +229,7 @@ class Go:
             info = "Wins!" if self._win else "Your Turn"
         else:
             info = "wins by " + str(win_by_points) + " points."
-        info_font = pygame.font.SysFont('Helvetica', 24)
+        info_font = pygame.font.SysFont('Helvetica', 16)
         text = info_font.render(info, True, BLACK)
         textRect = text.get_rect()
         textRect.centerx = self._display_surf.get_rect().centerx + 20
@@ -258,8 +258,8 @@ class Go:
         """
         if self.lastPosition[0] > 0 and self.lastPosition[1] > 0:
             pygame.draw.rect(self._display_surf,RED,
-                             ((MARGIN + WIDTH) * self.lastPosition[1] + (MARGIN + WIDTH) // 2, 
-                              (MARGIN + WIDTH) * self.lastPosition[0] + (MARGIN + WIDTH) // 2, 
+                             ((MARGIN + WIDTH) * self.lastPosition[1] - (MARGIN + WIDTH) // 2 + PADDING, 
+                              (MARGIN + WIDTH) * self.lastPosition[0] - (MARGIN + WIDTH) // 2 + PADDING, 
                               (MARGIN + WIDTH), 
                               (MARGIN + WIDTH)),1)
 
