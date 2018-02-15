@@ -1,12 +1,13 @@
 import tensorflow as tf
 import os
+import random
 
 class AlphaGo_Zero():
     """Go algorithm without human knowledge
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, path_to_model = '/', go_board_dimension = 9):
+    def __init__(self, go_board_dimension = 5):
         """Initialize a supervised learning res net model
         Args:
             path_to_model: path to where the tf model locates
@@ -14,24 +15,30 @@ class AlphaGo_Zero():
                 the default is 9*9 so it's convenient to train and run tests on.
         """
         self.go_board_dimension = go_board_dimension
-        self.nn_current_nn_path = path_to_model + "first" #TODO: Path to initial model
-        self.path_to_model = path_to_model
-        if not os.path.exists(self.path_to_model):
-            os.makedirs(self.path_to_model)
+
+        #Define the tensors
+        x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
+        self.nn = self.build_network(x) #Output tensor from the resnet
 
     def loss(p, v, z, pi, theta):
         c = tf.constant(1, dtype=float32, name="c")
         return tf.square(z-v) - tf.multiply(pi, tf.log(p)) + tf.multiply(c, tf.nn.l2_normalize(theta))
 
-    def build_netowrk(board):
-        data_in = board.board_grid
+    def build_network(self, x):
+        """ResNet structure TODO: @Ben make this prettier.
+        Args:
+            x: input as a tf placeholder of dimension board_dim*board_dim*3
+        Returns:
+            Z: output tensor of size 2
+        """
 
-        with tf.variable_scope("conv1") as scope:
-            Z = tf.layers.conv2d(board.board_grid, filters=32, kernel_size=3, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
+        with tf.variable_scope("conv1", reuse=True) as scope:
+            Z = tf.layers.conv2d(x, filters=32, kernel_size=3, strides=1, padding="SAME")
+            A = tf.nn.relu(Z, name="A")
             tf.get_variable_scope().reuse_variables()
+
         with tf.variable_scope("conv2") as scope:
-            Z = tf.layers.conv2d(tf_get_variable("conv1/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(tf.get_variable("conv1/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
             A = tf.nn.relu(Z)
             A = A + data_in
             tf.get_variable_scope().reuse_variables()
@@ -106,17 +113,57 @@ class AlphaGo_Zero():
             Z = tf.contrib.layers.fully_connected(A, 2)
             return Z
 
-    def train(self, game_number=1000):
+    def train(self, model_path, game_number=1000):
         """Train the res net model with results from each iteration of self play.
+        Args:
+            model_path: location where we want the final model to be saved
+            game_number: number of self play games used on training
+        Returns:
+            None, but a model is saved at the path
         """
-        player = 1 # black goes first
-        board = go_board(self.go_board_dimension, player, board_grid=None, game_history=None)
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+
+        BLACK = 1 # black goes first
+        board = go_board(self.go_board_dimension, BLACK, board_grid=None, game_history=None)
         mcts = MCTS(board) # root has no parent edge
 
-        self.nn = build_network(board)
         play = self_play(board, mcts.root_node, self.nn)
 
         play.play_till_finished()
+
+    def fake_train(self, model_path, training_data_num = 1000):
+        """This function is ued for testing the resNet independent of the mcts and self play code.
+        The goal is to teach the resNet to count the number of black and white stones on a board.
+        """
+        pass
+
+    def generate_fake_data(self, training_data_num):
+        """Generate fake boards and counts the number of black and white stones as labels.
+        Args:
+            training_data_num: the number of fake training data we want to generate
+        Returns:
+            Xs: a list of training boards
+            Ys: a list of training labels, each label is a size 2 array indicating the count for black and white stones
+        """
+        Xs = []
+        Ys = []
+
+        options = [-1, 0, 1] #white empty black
+        for i in training_data_num:
+            black_stone_count = 0
+            white_stone_count = 0
+
+            board = [[random.choice(options) for c in range(self.go_board_dimension)] for r in range(self.go_board_dimension)]
+            for r in range(self.go_board_dimension):
+                for c in range(self.go_board_dimension):
+                    if board[r][c] == -1:
+                        white_stone_count += 1
+                    elif board[r][c] == 1:
+                        black_stone_count += 1
+            Xs.append(board)
+            Ys.append([black_stone_count, white_stone_count])
+        return Xs, Ys
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
