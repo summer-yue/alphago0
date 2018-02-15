@@ -42,10 +42,9 @@ class self_play():
     def play_till_finish(self):
         """Play until the game reaches a final state (2 passes happen one after another)
         Returns:
-            new_training_data: A set of (board_grid, result) ready to be used as training labels
+            new_training_data: A list of board_grid ready to be used as training data
+            new_training_labels: a list of result ready to be used as training labels
         """
-        new_training_data = set()
-
         passed_once = False
         game_over = False
         while not game_over:
@@ -58,7 +57,6 @@ class self_play():
 
         winner = go_utils_terminal.evaluate_winner(current_board.board_grid)
 
-        for history_board in history_boards:
-            new_training_data.add(history_board.board_grid, winner)
-        return new_training_data
+        new_training_labels = [winner] * len(history_board.board_grid)
+        return history_board.board_grid, new_training_labels
 
