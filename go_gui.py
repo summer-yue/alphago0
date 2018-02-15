@@ -95,7 +95,6 @@ class Go:
     def on_cleanup(self):
         pygame.quit()
 
-
     def on_execute(self):   
         while( self._running ):
             self.go_board_init()

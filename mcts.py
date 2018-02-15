@@ -2,7 +2,7 @@ import edge
 import node
 import go_utils
 import random
-
+import time
 from math import sqrt
 
 class MCTS():
@@ -29,9 +29,7 @@ class MCTS():
         U = c_puct * P(edge) * sqrt(sum of N of parent_node's all edges) / (1 + N(edge))
         """
         c_puct = 0.5 # Exploration constant
-        sum_N_for_all_edges = 0
-        for other_edge in parent_node.edges:
-            sum_N_for_all_edges = sum_N_for_all_edges + other_edge.N
+        sum_N_for_all_edges = sum([other_edge.N for other_edge in parent_node.edges])
         U = c_puct * edge.P * sqrt(sum_N_for_all_edges) / (1 + edge.N)
         return U
 
@@ -45,15 +43,9 @@ class MCTS():
         selected_edge = None
         largest_qu_val = 0
 
-        for edge in all_edges:
-            #print(edge)
-            edge_u = self.calculate_U_for_edge(current_node, edge)
-            #print("edge.u:" + str(edge_u))
-            #print("edge.Q:" + str(edge.Q))
-            qu_val = edge.Q + edge_u
-            if qu_val > largest_qu_val:
-                largest_qu_val = qu_val
-                selected_edge = edge
+        edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(current_node, edge) for edge in all_edges}
+        if edge_to_qu_val != {}:
+            selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
         return selected_edge
 
     def run_one_simluation(self):
@@ -70,26 +62,27 @@ class MCTS():
         #Now current_node is a leaf node with no outgoing edges
 
         #expand and evaluate
-        potential_next_moves = [(-1, -1)]
         current_board = current_node.go_board
 
         (move_p_dist, v) = self.nn.predict(current_board)
 
         for (next_move, p) in move_p_dist:
-
+           
             is_move_valid, new_board = go_utils.make_move(current_board, next_move)
-
+         
             if is_move_valid: #expand the edge
-                potential_next_moves.append(next_move)
 
                 new_edge = edge.edge(from_node=current_node, to_node=None, W=0, Q=0, N=0, P=p, move=next_move)
                 current_node.edges.append(new_edge)
 
-                _, av_next_node = self.nn.predict(new_board)
-                next_node = node.node(new_board, new_edge, edges=[], action_value=av_next_node)
+                #TODO: @Summer: change to predict function from real alphago0 instance
+                #_, action_value_next_node = self.nn.predict(new_board)
+                action_value_next_node = 0.2
+
+                next_node = node.node(new_board, new_edge, edges=[], action_value=action_value_next_node)
                 new_edge.to_node = next_node
 
-                #TODO @Ben: batch the evaluation step here with resNet to improve efficiency
+                #TODO @Summer: batch the evaluation step here with resNet to improve efficiency
                 #backup from leaf node next_node to root
                 while next_node.parent_edge != None: #Continue when it is not root node
                     next_node.parent_edge.N = next_node.parent_edge.N + 1
@@ -125,12 +118,8 @@ class MCTS():
      
         #print(len(root_edges))
         most_explored_time = max([edge.N for edge in root_edges])
-        potential_most_used_edges = []
-        for edge in root_edges:
-            if edge.N == most_explored_time:
-                potential_most_used_edges.append(edge)
-
-        print("len potential most used edges:", len(potential_most_used_edges))
+        potential_most_used_edges = [edge for edge in root_edges if edge.N == most_explored_time]
+      
         #Pick the next move
         r = random.Random(self.random_seed)
         most_used_edge = r.choice(potential_most_used_edges)

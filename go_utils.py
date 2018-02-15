@@ -30,7 +30,7 @@ def make_move(board, move):
 
     #Invalid move because of Ko restrictions, this condition is checked before the liberty constraint
     if is_invalid_move_because_of_ko(board_copy, move):
-        print("Invalid because of Ko")
+        #print("Invalid because of Ko")
         return False, board
 
     #Invalid move if placed in a spot that forms a group of stones with no liberty
