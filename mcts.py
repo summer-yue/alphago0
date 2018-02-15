@@ -1,6 +1,7 @@
 import edge
 import node
 import go_utils
+import random
 
 from math import sqrt
 
@@ -8,7 +9,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, simluation_number = 1000):
+    def __init__(self, board, nn, simluation_number = 1000, random_seed = 2):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)
@@ -19,7 +20,7 @@ class MCTS():
         """
         self.simluation_number_remaining = simluation_number
         self.root_node = node.node(board, parent_edge = None, edges=[], action_value=0)
-        
+        self.random_seed = random_seed
         self.nn = nn
 
     def calculate_U_for_edge(self, parent_node, edge):
@@ -121,13 +122,18 @@ class MCTS():
         root_edges = self.root_node.edges
         most_used_edge = None
         most_explored_time = 0
-        print(len(root_edges))
+     
+        #print(len(root_edges))
+        most_explored_time = max([edge.N for edge in root_edges])
+        potential_most_used_edges = []
         for edge in root_edges:
-            if edge.N > most_explored_time:
-                most_explored_time = edge.N
-                most_used_edge = edge
+            if edge.N == most_explored_time:
+                potential_most_used_edges.append(edge)
 
+        print("len potential most used edges:", len(potential_most_used_edges))
         #Pick the next move
+        r = random.Random(self.random_seed)
+        most_used_edge = r.choice(potential_most_used_edges)
         move = most_used_edge.move
         new_board = most_used_edge.to_node.go_board
 
