@@ -14,6 +14,7 @@ class AlphaGo_Zero():
                 the default is 9*9 so it's convenient to train and run tests on.
         """
         self.go_board_dimension = go_board_dimension
+        self.nn_current_nn_path = path_to_model + "first" #TODO: Path to initial model
         self.path_to_model = path_to_model
         if not os.path.exists(self.path_to_model):
             os.makedirs(self.path_to_model)
@@ -116,6 +117,17 @@ class AlphaGo_Zero():
 
         play = self_play(board, mcts.root_node, self.nn)
         play.play_till_finished()
+
+    def add_training_data_and_train(self, batch_data):
+        """This function is intended to be called by the self_play code to augment the neural net.
+        nn gets trained with the new batch of data.
+        Args:
+            batch_data: a list of numpy array of tuples in the form (board, result)
+                result is 1 or -1 indicating black winning or white winning
+        No returns. but self.nn_current_nn_path is updated to where the new model is stored
+        """
+        pass
+
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
