@@ -106,7 +106,7 @@ class AlphaGo_Zero():
             Z = tf.contrib.layers.fully_connected(A, 2)
             return Z
 
-    def train(self):
+    def train(self, game_number=1000):
         """Train the res net model with results from each iteration of self play.
         """
         player = 1 # black goes first
@@ -114,20 +114,9 @@ class AlphaGo_Zero():
         mcts = MCTS(board) # root has no parent edge
 
         self.nn = build_network(board)
-
         play = self_play(board, mcts.root_node, self.nn)
+
         play.play_till_finished()
-
-    def add_training_data_and_train(self, batch_data):
-        """This function is intended to be called by the self_play code to augment the neural net.
-        nn gets trained with the new batch of data.
-        Args:
-            batch_data: a list of numpy array of tuples in the form (board, result)
-                result is 1 or -1 indicating black winning or white winning
-        No returns. but self.nn_current_nn_path is updated to where the new model is stored
-        """
-        pass
-
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
@@ -156,3 +145,29 @@ class AlphaGo_Zero():
             next_move: (row, col) indicating where the neural net with MCTS would place the stone
         """
         pass
+
+    def convert_to_one_hot_go_boards(self, original_board):
+        """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.
+        This is used before feed the boards into the neural net.
+        Args:
+            original_board: a board_dimension x board_dimension array, each element can be -1 (white), 0 (empty) or 1 (black).
+        Returns:
+            flattend_board: a board_dimension x board_dimension array x 3 one hot vector
+        """
+        board_dim = len(original_board)
+        return [[self.helper_convert_to_one_hot(original_board[r][c]) for c in range(board_dim)] for r in range(board_dim)]
+
+    def helper_convert_to_one_hot(self, element):
+        """ Transformation 1 -> [0,0,1]; 0->[0,1,0], -1 -> [-1,0,1]
+        Args:
+            element: number to be transformed into an array, has to be -1, 0 or 1
+        Return:
+            array of size 3 the element is transformed to
+        """
+        transformation = {
+            -1: [1,0,0],
+            0:  [0,1,0],
+            1:  [0,0,1]
+        }
+        return transformation[element]
+
