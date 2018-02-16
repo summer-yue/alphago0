@@ -1,11 +1,11 @@
 # This is a fake class used for mcts and self playing testing
-# nn in our unit tests uses Fake_AlphaGo_Zero instances
+# nn in our unit tests uses UniformPredictionNet instances
 # nn.predict() always returns the same probability for all available spot on the board
 # that is compatibile with the go rules
-import go_utils
+from go import go_utils
 import os
 
-class Fake_AlphaGo_Zero():
+class UniformPredictionNet():
     """ Fake class used for mcts and self playing testing
     """
     def __init__(self, path_to_model = '/', go_board_dimension = 9):

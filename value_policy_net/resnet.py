@@ -2,7 +2,7 @@ import tensorflow as tf
 import os
 import random
 
-class AlphaGo_Zero():
+class ResNet():
     """Go algorithm without human knowledge
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search

@@ -1,4 +1,4 @@
-import mcts
+from self_play import mcts
 
 class self_play():
     """Algorithm plays against itself till the game ends and produce a set of (board, policy, result)

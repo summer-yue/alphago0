@@ -1,8 +1,9 @@
-import edge
-import node
-import go_utils
+from self_play import edge
+from self_play import node
 import random
 import time
+
+from go import go_utils
 from math import sqrt
 
 class MCTS():

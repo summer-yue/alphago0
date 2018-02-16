@@ -1,7 +1,7 @@
 import mcts
-import fake_alphago_zero
-import go_board
-import mcts
+from value_policy_net.tests import uniform_prediction_net
+from go import go_board
+from self_play import mcts
 import unittest
 
 BLACK = 1
@@ -10,7 +10,7 @@ WHITE = -1
 class MCTSTest(unittest.TestCase):
     def test_init_1(self):
         board = go_board.go_board(board_dimension=3, player=BLACK)
-        nn = fake_alphago_zero.Fake_AlphaGo_Zero()
+        nn = uniform_prediction_net.UniformPredictionNet()
         mcts_instance = mcts.MCTS(board, nn, simluation_number = 1000)
         #print(str(mcts_instance.root_node))
 
@@ -18,7 +18,7 @@ class MCTSTest(unittest.TestCase):
         """ For graph with just a root node, select edge returns None
         """
         board = go_board.go_board(board_dimension=2, player=BLACK)
-        nn = fake_alphago_zero.Fake_AlphaGo_Zero()
+        nn = uniform_prediction_net.UniformPredictionNet()
         mcts_instance = mcts.MCTS(board, nn, simluation_number = 1000)
         self.assertEqual(mcts_instance.select_edge(mcts_instance.root_node), None)
 
@@ -26,7 +26,7 @@ class MCTSTest(unittest.TestCase):
         """ Run one simulation on graph with just one root node
         """
         board = go_board.go_board(board_dimension=2, player=BLACK)
-        nn = fake_alphago_zero.Fake_AlphaGo_Zero()
+        nn = uniform_prediction_net.UniformPredictionNet()
         mcts_instance = mcts.MCTS(board, nn, simluation_number = 1000)
 
         # mcts_instance.run_one_simluation()
