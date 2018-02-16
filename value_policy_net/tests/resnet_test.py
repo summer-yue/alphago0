@@ -1,82 +1,52 @@
-def build_netowrk(mnist):
-    data_in = mnist
+import unittest
+import numpy.testing as npt
+import numpy as np
+import random
 
-    with tf.variable_scope("conv1") as scope:
-        Z = tf.layers.conv2d(board.board_grid, filters=32, kernel_size=3, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv2") as scope:
-        Z = tf.layers.conv2d(tf_get_variable("conv1/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + data_in
-        tf.get_variable_scope().reuse_variables()
+from go import go_board as gb
+from go import go_utils
+from value_policy_net import resnet
 
-    with tf.variable_scope("conv3") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv2/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv4") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv3/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + tf.get_variable("conv2/A")
-        tf.get_variable_scope().reuse_variables()
+def generate_fake_data(training_data_num, go_board_dimension):
+    """Generate fake boards and counts the number of black and white stones as labels.
+    Args:
+        training_data_num: the number of fake training data we want to generate
+    Returns:
+        Xs: a list of training boards
+        Ys: a list of training labels, each label is a size 2 array indicating the count for black and white stones
+    """
+    Xs = []
+    Ys = []
 
-    with tf.variable_scope("pool1") as scope:
-        A = tf.layers.max_pooling2d(tf.get_variable("conv4/A"), pool_size=2, strides=2, padding="VALID")
-        tf.get_variable_scope().reuse_variables()
+    options = [-1, 0, 1] #white empty black
+    for i in range(training_data_num):
+        black_stone_count = 0
+        white_stone_count = 0
 
-    with tf.variable_scope("conv5") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("pool1/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv6") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv5/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + tf.get_variable("pool1/A")
-        tf.get_variable_scope().reuse_variables()
+        board = [[random.choice(options) for c in range(go_board_dimension)] for r in range(go_board_dimension)]
+        for r in range(go_board_dimension):
+            for c in range(go_board_dimension):
+                if board[r][c] == -1:
+                    white_stone_count += 1
+                elif board[r][c] == 1:
+                    black_stone_count += 1
+        Xs.append(board)
+        Ys.append([black_stone_count, white_stone_count])
+    return Xs, Ys
 
-    with tf.variable_scope("conv7") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv6/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv8") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv7/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + tf.get_variable("conv6/A")
-        tf.get_variable_scope().reuse_variables()
+class ResNetTest(unittest.TestCase):
+    def test_gen_fake_data(self):
+        Xs, Ys = generate_fake_data(training_data_num=100, go_board_dimension=5)
+        self.assertEqual(len(Xs), len(Ys))
+        # print(np.array(Xs).shape)
+        # print(np.array(Ys).shape)
 
-    with tf.variable_scope("pool2") as scope:
-        A = tf.layers.max_pooling2d(tf.get_variable("conv8/A"), pool_size=2, strides=2, padding="VALID")
-        tf.get_variable_scope().reuse_variables()
+        # print(Xs[0])
+        # print(Ys[0])
 
-    with tf.variable_scope("conv9") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("pool2/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv10") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv9/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + tf.get_variable("pool2/A")
-        tf.get_variable_scope().reuse_variables()
+    def test_train_resnet(self):
+        Xs, Ys = generate_fake_data(training_data_num=100, go_board_dimension=5)
+        res = resnet.ResNet(go_board_dimension=5)
 
-    with tf.variable_scope("conv11") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv10/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        tf.get_variable_scope().reuse_variables()
-    with tf.variable_scope("conv12") as scope:
-        Z = tf.layers.conv2d(tf.get_variable("conv11/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-        A = tf.nn.relu(Z)
-        A = A + tf.get_variable("conv10/A")
-        tf.get_variable_scope().reuse_variables()
-
-    with tf.variable_scope("pool3") as scope:
-        A = tf.layers.max_pooling2d(tf.get_variable("conv12/A"), pool_size=2, strides=2, padding="VALID")
-        tf.get_variable_scope().reuse_variables()
-
-    with tf.variable_scope("fc") as scope:
-        P = tf.contrib.layers.flatten(tf.get_variable("pool3/A"))
-        P = tf.nn.relu(P)
-        Z = tf.contrib.layers.fully_connected(P, 100)
-        A = tf.nn.relu(Z)
-        Z = tf.contrib.layers.fully_connected(A, 2)
-        return Z
+if __name__ == '__main__':
+    unittest.main()

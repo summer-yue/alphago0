@@ -16,13 +16,36 @@ class ResNet():
         """
         self.go_board_dimension = go_board_dimension
 
-        #Define the tensors
-        x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
-        self.nn = self.build_network(x) #Output tensor from the resnet
+        #Define the tensors that compose the graph
+        self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
+        self.y = tf.placeholder(tf.float32, [None, 2], name="labels")
+        self.y_ = self.build_network(self.x) #Output tensor from the resnet
+        self.loss = tf.losses.absolute_difference(labels=self.y, predictions=self.y_)
+        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.y, self.y_), tf.float32))
+        self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
+        self.train_op = self.optimizer.minimize(self.loss)
 
     def loss(p, v, z, pi, theta):
         c = tf.constant(1, dtype=float32, name="c")
         return tf.square(z-v) - tf.multiply(pi, tf.log(p)) + tf.multiply(c, tf.nn.l2_normalize(theta))
+
+    def build_conv_layer(self, input_tensor, varscope):
+        with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
+            Z = tf.layers.conv2d(input_tensor, filters=3, kernel_size=3, strides=1, padding="SAME")
+            A = tf.nn.relu(Z, name="A")
+            return A
+
+    def build_res_layer(self, input_tensor, res_tensor, varscope):
+        with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
+            Z = tf.layers.conv2d(input_tensor, filters=3, kernel_size=3, strides=1, padding="SAME")
+            A = tf.nn.relu(Z)
+            A = A + res_tensor
+            return A
+
+    def build_pooling_layer(self, input_tensor, varscope):
+        with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
+            A = tf.layers.max_pooling2d(input_tensor, pool_size=2, strides=2, padding="VALID")
+            return A
 
     def build_network(self, x):
         """ResNet structure TODO: @Ben make this prettier.
@@ -32,81 +55,19 @@ class ResNet():
             Z: output tensor of size 2
         """
 
-        with tf.variable_scope("conv1", reuse=True) as scope:
-            Z = tf.layers.conv2d(x, filters=32, kernel_size=3, strides=1, padding="SAME")
-            A = tf.nn.relu(Z, name="A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv2") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv1/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + data_in
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv3") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv2/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            tf.get_variable_scope().reuse_variables()
-        with tf.variable_scope("conv4") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv3/A"), filters=32, kernel_size=3, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + tf.get_variable("conv2/A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("pool1") as scope:
-            A = tf.layers.max_pooling2d(tf.get_variable("conv4/A"), pool_size=2, strides=2, padding="VALID")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv5") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("pool1/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            tf.get_variable_scope().reuse_variables()
-        with tf.variable_scope("conv6") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv5/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + tf.get_variable("pool1/A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv7") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv6/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            tf.get_variable_scope().reuse_variables()
-        with tf.variable_scope("conv8") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv7/A"), filters=64, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + tf.get_variable("conv6/A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("pool2") as scope:
-            A = tf.layers.max_pooling2d(tf.get_variable("conv8/A"), pool_size=2, strides=2, padding="VALID")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv9") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("pool2/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            tf.get_variable_scope().reuse_variables()
-        with tf.variable_scope("conv10") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv9/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + tf.get_variable("pool2/A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("conv11") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv10/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            tf.get_variable_scope().reuse_variables()
-        with tf.variable_scope("conv12") as scope:
-            Z = tf.layers.conv2d(tf.get_variable("conv11/A"), filters=128, kernel_size=5, strides=1, padding="SAME")
-            A = tf.nn.relu(Z)
-            A = A + tf.get_variable("conv10/A")
-            tf.get_variable_scope().reuse_variables()
-
-        with tf.variable_scope("pool3") as scope:
-            A = tf.layers.max_pooling2d(tf.get_variable("conv12/A"), pool_size=2, strides=2, padding="VALID")
-            tf.get_variable_scope().reuse_variables()
+        A1 = self.build_conv_layer(input_tensor=x, varscope="conv1")
+        A2 = self.build_res_layer(input_tensor=A1, res_tensor=x, varscope="conv2")
+        A3 = self.build_conv_layer(input_tensor=A2, varscope="conv3")
+        A4 = self.build_res_layer(input_tensor=A3, res_tensor=A2, varscope="conv4")
+        Ap1 = self.build_pooling_layer(input_tensor=A4, varscope="pool1")
+        A5 = self.build_conv_layer(input_tensor=Ap1, varscope="conv5")
+        A6 = self.build_res_layer(input_tensor=A5, res_tensor=Ap1, varscope="conv6")
+        A7 = self.build_conv_layer(input_tensor=A6, varscope="conv7")
+        A8 = self.build_res_layer(input_tensor=A7, res_tensor=A6, varscope="conv8")
+        Ap2 = self.build_pooling_layer(input_tensor=A8, varscope="pool2")
 
         with tf.variable_scope("fc") as scope:
-            P = tf.contrib.layers.flatten(tf.get_variable("pool3/A"))
+            P = tf.contrib.layers.flatten(Ap2)
             P = tf.nn.relu(P)
             Z = tf.contrib.layers.fully_connected(P, 100)
             A = tf.nn.relu(Z)
@@ -128,7 +89,7 @@ class ResNet():
         board = go_board(self.go_board_dimension, BLACK, board_grid=None, game_history=None)
         mcts = MCTS(board) # root has no parent edge
 
-        play = self_play(board, mcts.root_node, self.nn)
+        play = self_play(board, mcts.root_node, self)
 
         play.play_till_finished()
 
@@ -138,33 +99,6 @@ class ResNet():
         """
         pass
 
-    def generate_fake_data(self, training_data_num):
-        """Generate fake boards and counts the number of black and white stones as labels.
-        Args:
-            training_data_num: the number of fake training data we want to generate
-        Returns:
-            Xs: a list of training boards
-            Ys: a list of training labels, each label is a size 2 array indicating the count for black and white stones
-        """
-        Xs = []
-        Ys = []
-
-        options = [-1, 0, 1] #white empty black
-        for i in training_data_num:
-            black_stone_count = 0
-            white_stone_count = 0
-
-            board = [[random.choice(options) for c in range(self.go_board_dimension)] for r in range(self.go_board_dimension)]
-            for r in range(self.go_board_dimension):
-                for c in range(self.go_board_dimension):
-                    if board[r][c] == -1:
-                        white_stone_count += 1
-                    elif board[r][c] == 1:
-                        black_stone_count += 1
-            Xs.append(board)
-            Ys.append([black_stone_count, white_stone_count])
-        return Xs, Ys
-
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
         Args:
@@ -172,24 +106,6 @@ class ResNet():
         Returns:
             p: the probability distribution of the next move according to current policy. including pass
             v: the probability of winning from this board.
-        """
-        pass
-
-    def play_with_raw_nn(self, board):
-        """Play a move with the raw res net
-        Args:
-            board: current board including the current player and stone distribution
-        Returns:
-            next_move: (row, col) indicating where the neural net would place the stone
-        """
-        pass
-
-    def play_with_mcts(self, board):
-        """Play a move with the res net and another round of Monte Carlo Tree Search
-        Args:
-            board: current board including the current player and stone distribution
-        Returns:
-            next_move: (row, col) indicating where the neural net with MCTS would place the stone
         """
         pass
 
@@ -217,4 +133,5 @@ class ResNet():
             1:  [0,0,1]
         }
         return transformation[element]
+
 
