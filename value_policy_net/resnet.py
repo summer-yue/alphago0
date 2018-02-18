@@ -18,7 +18,7 @@ class ResNet():
 
         #Define the tensors that compose the graph
         self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
-        self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension, self.go_board_dimension, 1], name="labels_p")
+        self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension*self.go_board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
             
@@ -54,9 +54,9 @@ class ResNet():
             A = tf.layers.max_pooling2d(input_tensor, pool_size=2, strides=2, padding="VALID")
             return A
 
-    def build_head_conv_layer(self, input_tensor, varscope):
+    def build_head_conv_layer(self, input_tensor, varscope, filter):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=2, kernel_size=1, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=filter, kernel_size=1, strides=1, padding="SAME")
             Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A
@@ -73,15 +73,15 @@ class ResNet():
         A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
         for i in range(10):
-            print("at res block number:", str(i))
             A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
 
         #Policy head
-        ph1 = self.build_head_conv_layer(A, "policy_head")
-        p_logits = tf.contrib.layers.fully_connected(ph1, 1)
+        ph1 = self.build_head_conv_layer(A, "policy_head", filter=2)
+        ph1 = tf.contrib.layers.flatten(ph1)
+        p_logits = tf.contrib.layers.fully_connected(ph1, self.go_board_dimension*self.go_board_dimension+1)
 
         #Value head
-        vh1 = self.build_head_conv_layer(A, "value_head")
+        vh1 = self.build_head_conv_layer(A, "value_head", filter=1)
         vh2 = tf.contrib.layers.fully_connected(vh1, 256)
         vh2 = tf.nn.relu(vh2, name="vh2")
         vh2 = tf.contrib.layers.flatten(vh2)

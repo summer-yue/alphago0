@@ -13,7 +13,8 @@ def generate_fake_data(training_data_num, go_board_dimension):
         training_data_num: the number of fake training data we want to generate
     Returns:
         Xs: a list of training boards
-        Ys: a list of training labels, each label is a size 2 array indicating the count for black and white stones
+        Ys: a list of training labels, each label is: 
+        [a size 26 one hot arrayindicating the count the total number stones, integer indicating black(1) or white(-1) has more stones]
     """
     Xs = []
     Ys = []
@@ -31,7 +32,17 @@ def generate_fake_data(training_data_num, go_board_dimension):
                 elif board[r][c] == 1:
                     black_stone_count += 1
         Xs.append(board)
-        Ys.append([black_stone_count, white_stone_count])
+
+        total_stone_count = black_stone_count + white_stone_count
+        total_stone_count_vector = [0]*26
+        total_stone_count_vector[total_stone_count] = 1
+        if black_stone_count > white_stone_count:
+            player_with_more_stones = 1
+        elif black_stone_count < white_stone_count:
+            player_with_more_stones = -1
+        else:
+            player_with_more_stones = 0
+        Ys.append([black_stone_count, player_with_more_stones])
     return Xs, Ys
 
 class ResNetTest(unittest.TestCase):
