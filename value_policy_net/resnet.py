@@ -18,33 +18,47 @@ class ResNet():
 
         #Define the tensors that compose the graph
         self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
-        self.y = tf.placeholder(tf.float32, [None, 2], name="labels")
-        self.y_ = self.build_network(self.x) #Output tensor from the resnet
-        self.loss = tf.losses.absolute_difference(labels=self.y, predictions=self.y_)
-        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.y, self.y_), tf.float32))
+        self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension, self.go_board_dimension, 1], name="labels_p")
+        self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
+        self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
+            
+        # TODO change loss function and accuracy
+        self.loss = tf.losses.absolute_difference(labels=self.yv, predictions=self.yv_) + tf.losses.absolute_difference(labels=self.yp, predictions=self.yp_)
+        self.accuracy = tf.reduce_mean(tf.cast(tf.logical_and(tf.equal(self.yp, self.yp_),tf.equal(self.yv, self.yv_)), tf.float32))
         self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
         self.train_op = self.optimizer.minimize(self.loss)
 
-    def loss(p, v, z, pi, theta):
-        c = tf.constant(1, dtype=float32, name="c")
-        return tf.square(z-v) - tf.multiply(pi, tf.log(p)) + tf.multiply(c, tf.nn.l2_normalize(theta))
-
-    def build_conv_layer(self, input_tensor, varscope):
+    def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=3, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A
 
     def build_res_layer(self, input_tensor, res_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=3, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z)
             A = A + res_tensor
             return A
 
+    def build_res_block(self, input_tensor, varscope):
+        with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
+            A1 = self.build_conv_block(input_tensor=input_tensor, varscope="conv1")
+            A2 = self.build_res_layer(input_tensor=A1, res_tensor=input_tensor, varscope="res2")
+            return A2
+
     def build_pooling_layer(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
             A = tf.layers.max_pooling2d(input_tensor, pool_size=2, strides=2, padding="VALID")
+            return A
+
+    def build_head_conv_layer(self, input_tensor, varscope):
+        with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
+            Z = tf.layers.conv2d(input_tensor, filters=2, kernel_size=1, strides=1, padding="SAME")
+            Z = tf.layers.batch_normalization(Z)
+            A = tf.nn.relu(Z, name="A")
             return A
 
     def build_network(self, x):
@@ -52,27 +66,31 @@ class ResNet():
         Args:
             x: input as a tf placeholder of dimension board_dim*board_dim*3
         Returns:
-            Z: output tensor of size 2
+            p_logits, v_logits: the logits for policy and value
+            P, V: output of policy and value heads
         """
 
-        A1 = self.build_conv_layer(input_tensor=x, varscope="conv1")
-        A2 = self.build_res_layer(input_tensor=A1, res_tensor=x, varscope="conv2")
-        A3 = self.build_conv_layer(input_tensor=A2, varscope="conv3")
-        A4 = self.build_res_layer(input_tensor=A3, res_tensor=A2, varscope="conv4")
-        Ap1 = self.build_pooling_layer(input_tensor=A4, varscope="pool1")
-        A5 = self.build_conv_layer(input_tensor=Ap1, varscope="conv5")
-        A6 = self.build_res_layer(input_tensor=A5, res_tensor=Ap1, varscope="conv6")
-        A7 = self.build_conv_layer(input_tensor=A6, varscope="conv7")
-        A8 = self.build_res_layer(input_tensor=A7, res_tensor=A6, varscope="conv8")
-        Ap2 = self.build_pooling_layer(input_tensor=A8, varscope="pool2")
+        A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
-        with tf.variable_scope("fc") as scope:
-            P = tf.contrib.layers.flatten(Ap2)
-            P = tf.nn.relu(P)
-            Z = tf.contrib.layers.fully_connected(P, 100)
-            A = tf.nn.relu(Z)
-            Z = tf.contrib.layers.fully_connected(A, 2)
-            return Z
+        for i in range(10):
+            print("at res block number:", str(i))
+            A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
+
+        #Policy head
+        ph1 = self.build_head_conv_layer(A, "policy_head")
+        p_logits = tf.contrib.layers.fully_connected(ph1, 1)
+
+        #Value head
+        vh1 = self.build_head_conv_layer(A, "value_head")
+        vh2 = tf.contrib.layers.fully_connected(vh1, 256)
+        vh2 = tf.nn.relu(vh2, name="vh2")
+        vh2 = tf.contrib.layers.flatten(vh2)
+        v_logits = tf.contrib.layers.fully_connected(vh2, 1)
+        
+        P = tf.nn.softmax(p_logits)
+        V = tf.nn.tanh(v_logits)
+
+        return P, V, p_logits, v_logits
 
     def train(self, model_path, game_number=1000):
         """Train the res net model with results from each iteration of self play.
