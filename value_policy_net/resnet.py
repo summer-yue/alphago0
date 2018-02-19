@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import os
 import random
 
@@ -23,10 +24,20 @@ class ResNet():
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
             
         # TODO change loss function and accuracy
-        self.loss = tf.losses.absolute_difference(labels=self.yv, predictions=self.yv_) + tf.losses.absolute_difference(labels=self.yp, predictions=self.yp_)
-        self.accuracy = tf.reduce_mean(tf.cast(tf.logical_and(tf.equal(self.yp, self.yp_),tf.equal(self.yv, self.yv_)), tf.float32))
+        self.calc_loss()
+        self.calc_accuracy()
         self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
         self.train_op = self.optimizer.minimize(self.loss)
+
+    def calc_loss(self):
+        value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
+        policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
+        self.loss = value_loss + policy_loss
+
+    def calc_accuracy(self):
+        policy_accuracy = tf.reduce_mean(tf.subtract(self.yp, self.yp_))
+        value_accuracy = tf.reduce_mean(tf.cast(tf.equal(self.yv, self.yv_), tf.float32))
+        self.accuracy = tf.add(policy_accuracy, value_accuracy)
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
@@ -92,30 +103,46 @@ class ResNet():
 
         return P, V, p_logits, v_logits
 
-    def train(self, model_path, game_number=1000):
+    def train(self, training_boards, training_labels_p, training_labels_v, model_path):
         """Train the res net model with results from each iteration of self play.
         Args:
             model_path: location where we want the final model to be saved
-            game_number: number of self play games used on training
+            training_boards: an array of board grids
+            training_labels_p: an dim x dim + 1 array indicating the policy for current board
+            training_labels_v: an array of results indicating who is the winner
         Returns:
-            None, but a model is saved at the path
+            None, but a model is saved at the model_path
         """
         if not os.path.exists(model_path):
             os.makedirs(model_path)
 
-        BLACK = 1 # black goes first
-        board = go_board(self.go_board_dimension, BLACK, board_grid=None, game_history=None)
-        mcts = MCTS(board) # root has no parent edge
+        sess.run(
+            self.train_op,
+            feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv:training_labels_v}
+        )
 
-        play = self_play(board, mcts.root_node, self)
-
-        play.play_till_finished()
-
-    def fake_train(self, model_path, training_data_num = 1000):
+    def fake_train(self, model_path, training_data_num = 10000):
         """This function is ued for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
         """
-        pass
+        fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num, 5)
+        print(np.array(fake_x).shape)
+        print(np.array(fake_yp).shape)
+        print(np.array(fake_yv).shape)
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            sess.run(
+                self.train_op,
+                feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}
+            )
+            print("accuracy", sess.run(self.accuracy, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}))
+            print("loss", sess.run(self.loss, feed_dict={self.x: fake_x[0], self.yp: fake_yp[0], self.yv:fake_yv[0]}))
+
+            #print("predicting for:" + str(fake_x[0]))
+            print("Expected labels:" + str(fake_yp[0]) + "," + str(fake_yv[0]))
+            print("Predicted labels:")
+            print(sess.run(self.yp_, feed_dict={self.x: [fake_x[0]]}))
+            print(sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
@@ -125,7 +152,11 @@ class ResNet():
             p: the probability distribution of the next move according to current policy. including pass
             v: the probability of winning from this board.
         """
-        pass
+        #TODO: add current player to the input 
+        input_to_nn = self.convert_to_one_hot_go_boards(board.board_grid)
+        p = sess.run(self.yp_, feed_dict={self.x: input_to_nn})
+        v = sess.run(self.yv_, feed_dict={self.x: input_to_nn})
+        return p, v
 
     def convert_to_one_hot_go_boards(self, original_board):
         """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.
@@ -152,4 +183,43 @@ class ResNet():
         }
         return transformation[element]
 
+    def generate_fake_data(self, training_data_num, go_board_dimension):
+        """Generate fake boards and counts the number of black and white stones as labels.
+        Args:
+            training_data_num: the number of fake training data we want to generate
+        Returns:
+            Xs: a list of training boards
+            Ys: a list of training labels, each label is: 
+            [a size 26 one hot arrayindicating the count the total number stones, integer indicating black(1) or white(-1) has more stones]
+        """
+        Xs = []
+        total_stone_count_vectors = []
+        player_with_more_stones_all = []
 
+        options = [-1, 0, 1] #white empty black
+        for i in range(training_data_num):
+            black_stone_count = 0
+            white_stone_count = 0
+
+            board = [[random.choice(options) for c in range(go_board_dimension)] for r in range(go_board_dimension)]
+            for r in range(go_board_dimension):
+                for c in range(go_board_dimension):
+                    if board[r][c] == -1:
+                        white_stone_count += 1
+                    elif board[r][c] == 1:
+                        black_stone_count += 1
+            Xs.append(self.convert_to_one_hot_go_boards(board))
+
+            total_stone_count = black_stone_count + white_stone_count
+            total_stone_count_vector = [0]*(go_board_dimension*go_board_dimension+1)
+            total_stone_count_vector[total_stone_count] = 1
+
+            if black_stone_count > white_stone_count:
+                player_with_more_stones = float(1)
+            elif black_stone_count < white_stone_count:
+                player_with_more_stones = float(-1)
+            else:
+                player_with_more_stones = float(0)
+            total_stone_count_vectors.append(total_stone_count_vector)
+            player_with_more_stones_all.append([float(player_with_more_stones)])
+        return Xs, total_stone_count_vectors, player_with_more_stones_all

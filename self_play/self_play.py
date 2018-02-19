@@ -12,12 +12,12 @@ class self_play():
         Fields:
             self.nn: instance of AlphaGo0 model used for this iteration of self play
             self.current_node: the current node during self play
-            self.moves: track the history of the nodes played and their corresponding pi
+            self.policies: track the history of the nodes played and their corresponding pi
                 pi is the probabilty for next moves according to the MCTS simulations
         """
         self.nn = nn
         self.current_board = starting_board
-        self.moves = {}
+        self.policies = []
         self.history_boards = [] #Records all the board config played in this self play session
 
     def play_one_move(self):
@@ -30,10 +30,11 @@ class self_play():
 
         ts_instance = mcts.MCTS(self.current_board, self.nn)
         print("Starting to run the simulations")
-        new_board, move = ts_instance.run_all_simulations()
+        new_board, move, policy = ts_instance.run_all_simulations()
 
         print("move is:", move)
 
+        self.policies.append(policy)
         self.history_boards.append(self.current_board) #Save current board to history
         self.current_board = new_board #Update current board to board after move
 
@@ -43,7 +44,8 @@ class self_play():
         """Play until the game reaches a final state (2 passes happen one after another)
         Returns:
             new_training_data: A list of board_grid ready to be used as training data
-            new_training_labels: a list of result ready to be used as training labels
+            self.policies: a list of result ready to be used as policy training labels
+            new_training_labels_v: a list of result ready to be used as value training labels
         """
         passed_once = False
         game_over = False
@@ -57,6 +59,7 @@ class self_play():
 
         winner = go_utils_terminal.evaluate_winner(current_board.board_grid)
 
-        new_training_labels = [winner] * len(history_board.board_grid)
-        return history_board.board_grid, new_training_labels
+        new_training_labels_v = [winner] * len(history_board.sboard_grid)
+
+        return history_board.board_grid, self.policies, new_training_labels_v
 

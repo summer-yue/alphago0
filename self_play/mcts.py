@@ -108,6 +108,7 @@ class MCTS():
             (new_board, move)
             move: the best move generated according to the MCTS simulations
             new_board: board and its configurations after the best move is placed
+            policy: a size dimension x dimension + 1 array indicating the possibility of each move
         """
         for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
@@ -127,4 +128,14 @@ class MCTS():
         move = most_used_edge.move
         new_board = most_used_edge.to_node.go_board
 
-        return new_board, move
+        policy = [0] * (self.nn.go_board_dimension*self.nn.go_board_dimension+1)
+        sum_N = sum([edge.N for edge in root_edges])
+        for edge in root_edges:
+            (r, c) = edge.move
+            if (r == -1) and (c == -1): #Pass
+                #TODO: add temparature term for exploration
+                policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = edge.N * 1.0 / sum_N
+            else:
+                policy[r*self.nn.go_board_dimension+c] = edge.N * 1.0 / sum_N
+
+        return new_board, move, policy
