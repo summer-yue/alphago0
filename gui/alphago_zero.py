@@ -11,6 +11,12 @@ class AlphaGoZero():
         self.model_path = model_path
 
     def train_nn(self, training_game_number = 1):
+        """Training the resnet by self play using MCTS
+        Args:
+            training_game_number: number of self play games
+        Returns:
+            Nothing, but model_path/game_1 has the model trained
+        """
         BLACK = 1 # black goes first
         self.nn = resnet.ResNet(go_board_dimension = 5)
 
@@ -23,7 +29,7 @@ class AlphaGoZero():
             training_boards, training_labels_p, training_labels_v = play.play_till_finish()
             
             if i % 1 == 0:
-                model_path = model_path + '/game_' + str(i)
+                model_path = self.model_path + '/game_' + str(i)
                 self.nn.train(training_boards, training_labels_p, training_labels_v, model_path)
             else: # Train without saving
                 self.nn.train(training_boards, training_labels_p, training_labels_v)

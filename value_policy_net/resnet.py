@@ -11,9 +11,8 @@ class ResNet():
     def __init__(self, go_board_dimension = 5):
         """Initialize a supervised learning res net model
         Args:
-            path_to_model: path to where the tf model locates
             go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
-                the default is 9*9 so it's convenient to train and run tests on.
+                the default is 5*5 so it's convenient to train and run tests on.
         """
         self.go_board_dimension = go_board_dimension
 
@@ -23,9 +22,8 @@ class ResNet():
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
             
-        # TODO change loss function and accuracy
+        # TODO change loss function for the real thing
         self.calc_loss()
-        self.calc_accuracy()
         self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
         self.train_op = self.optimizer.minimize(self.loss)
 
@@ -33,16 +31,14 @@ class ResNet():
             sess.run(tf.global_variables_initializer())
 
     def calc_loss(self):
+        """Calculate the loss function for the policy-value network
+        Returns:
+            The loss tensor
+        """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
         policy_loss = 0.0
         self.loss = value_loss + policy_loss
-
-    def calc_accuracy(self):
-        policy_accuracy = tf.reduce_mean(tf.subtract(self.yp, self.yp_))
-        value_accuracy = tf.reduce_mean(tf.abs(tf.subtract(self.yv, self.yv_)))
-        policy_accuracy = 0.0
-        self.accuracy = tf.add(policy_accuracy, value_accuracy)
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
@@ -111,7 +107,8 @@ class ResNet():
     def train(self, training_boards, training_labels_p, training_labels_v, model_path = None):
         """Train the res net model with results from each iteration of self play.
         Args:
-            model_path: location where we want the final model to be saved
+            model_path: location where we want the final model to be saved,
+                None if we don't want to save the model
             training_boards: an array of board grids
             training_labels_p: an dim x dim + 1 array indicating the policy for current board
             training_labels_v: an array of results indicating who is the winner
@@ -134,6 +131,7 @@ class ResNet():
     def fake_train(self, model_path, training_data_num = 10000):
         """This function is ued for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
+        This code is used in test only.
         """
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num, 5)
         print(np.array(fake_x).shape)
@@ -145,7 +143,6 @@ class ResNet():
                 self.train_op,
                 feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}
             )
-            print("accuracy", sess.run(self.accuracy, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv}))
             print("loss", sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv}))
 
             #print("predicting for:" + str(fake_x[0]))
@@ -158,8 +155,10 @@ class ResNet():
         """Given a board. predict (p,v) according to the current res net
         Args:
             board: current board including the current player and stone distribution
+            model_path: None if we used the model previously trained for this object, 
+                otherwise restore the model from this path used in real time playing
         Returns:
-            p_dist: the probability distribution of the next move according to current policy. including pass
+            p_dist: the probability distribution dictionary of the next move according to current policy. including pass
             v: the probability of winning from this board.
         """
         #TODO: add current player to the input
