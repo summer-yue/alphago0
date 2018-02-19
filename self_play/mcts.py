@@ -67,8 +67,8 @@ class MCTS():
 
         (move_p_dist, v) = self.nn.predict(current_board)
 
-        for (next_move, p) in move_p_dist:
-           
+        for next_move in move_p_dist:
+            p = move_p_dist[next_move]
             is_move_valid, new_board = go_utils.make_move(current_board, next_move)
          
             if is_move_valid: #expand the edge

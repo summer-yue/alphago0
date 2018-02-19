@@ -29,14 +29,19 @@ class ResNet():
         self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
         self.train_op = self.optimizer.minimize(self.loss)
 
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+
     def calc_loss(self):
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
+        policy_loss = 0.0
         self.loss = value_loss + policy_loss
 
     def calc_accuracy(self):
         policy_accuracy = tf.reduce_mean(tf.subtract(self.yp, self.yp_))
-        value_accuracy = tf.reduce_mean(tf.cast(tf.equal(self.yv, self.yv_), tf.float32))
+        value_accuracy = tf.reduce_mean(tf.abs(tf.subtract(self.yv, self.yv_)))
+        policy_accuracy = 0.0
         self.accuracy = tf.add(policy_accuracy, value_accuracy)
 
     def build_conv_block(self, input_tensor, varscope):
@@ -103,7 +108,7 @@ class ResNet():
 
         return P, V, p_logits, v_logits
 
-    def train(self, training_boards, training_labels_p, training_labels_v, model_path):
+    def train(self, training_boards, training_labels_p, training_labels_v, model_path = None):
         """Train the res net model with results from each iteration of self play.
         Args:
             model_path: location where we want the final model to be saved
@@ -115,11 +120,16 @@ class ResNet():
         """
         if not os.path.exists(model_path):
             os.makedirs(model_path)
+        if model_path:
+            saver = tf.train.Saver(max_to_keep=500)
 
-        sess.run(
-            self.train_op,
-            feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv:training_labels_v}
-        )
+        with tf.Session() as sess:
+            sess.run(
+                self.train_op,
+                feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv:training_labels_v}
+            )
+            if model_path:
+                save_path = saver.save(sess, model_path)
 
     def fake_train(self, model_path, training_data_num = 10000):
         """This function is ued for testing the resNet independent of the mcts and self play code.
@@ -135,28 +145,41 @@ class ResNet():
                 self.train_op,
                 feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}
             )
-            print("accuracy", sess.run(self.accuracy, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}))
-            print("loss", sess.run(self.loss, feed_dict={self.x: fake_x[0], self.yp: fake_yp[0], self.yv:fake_yv[0]}))
+            print("accuracy", sess.run(self.accuracy, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv}))
+            print("loss", sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv}))
 
             #print("predicting for:" + str(fake_x[0]))
-            print("Expected labels:" + str(fake_yp[0]) + "," + str(fake_yv[0]))
+            print("Expected labels:" + str(fake_yv[0]))
             print("Predicted labels:")
-            print(sess.run(self.yp_, feed_dict={self.x: [fake_x[0]]}))
+            #print(sess.run(self.yp_, feed_dict={self.x: [fake_x[0]]}))
             print(sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
 
-    def predict(self, board):
+    def predict(self, board, model_path=None):
         """Given a board. predict (p,v) according to the current res net
         Args:
             board: current board including the current player and stone distribution
         Returns:
-            p: the probability distribution of the next move according to current policy. including pass
+            p_dist: the probability distribution of the next move according to current policy. including pass
             v: the probability of winning from this board.
         """
-        #TODO: add current player to the input 
+        #TODO: add current player to the input
+        if model_path:
+            saver = tf.train.Saver(max_to_keep=500)
+            saver.restore(sess, model_path)
+        p_dist = {}
         input_to_nn = self.convert_to_one_hot_go_boards(board.board_grid)
-        p = sess.run(self.yp_, feed_dict={self.x: input_to_nn})
-        v = sess.run(self.yv_, feed_dict={self.x: input_to_nn})
-        return p, v
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            p = sess.run(self.yp_, feed_dict={self.x: [input_to_nn]})
+            v = sess.run(self.yv_, feed_dict={self.x: [input_to_nn]})
+
+            p = p[0]
+            p_dist[(-1, -1)] = p[self.go_board_dimension**2]
+            for r in range(self.go_board_dimension):
+                for c in range(self.go_board_dimension):
+                    p_dist[(r, c)] = p[r * self.go_board_dimension + c]
+            
+            return p_dist, v
 
     def convert_to_one_hot_go_boards(self, original_board):
         """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.

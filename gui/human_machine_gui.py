@@ -4,6 +4,7 @@ from go import go_utils
 from go import go_utils_terminal
 from value_policy_net.tests import uniform_prediction_net
 from self_play import self_play
+from gui import alphago_zero
 from pygame.locals import *
 
 # Assume human is black and machine is white
@@ -49,15 +50,19 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
+        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="../models/game_1")
 
     def machine_responds(self):
-        self_play_instance = self_play.self_play(self.go_board, nn)
-        if self_play_instance.play_one_move(): # Machine passes
+        #self_play_instance = self_play.self_play(self.go_board, nn)
+        machine_mv, win_prob = self.alphpago0.play_with_raw_nn()
+        if machine_mv == (-1, -1): # Machine passes
             if self.passed_once == True:
                 print("Game Over!")
                 self.game_over = True
         else:
             self.passed_once = False
+            _, self.go_board = go_utils.make_move(board=self.go_board, move=machine_mv)
+            print("Machine thinks the winning probability is:", win_prob)
 
         self.go_board = self_play_instance.current_board
 
