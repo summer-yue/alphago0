@@ -21,8 +21,7 @@ class ResNet():
         self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension*self.go_board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
-            
-        # TODO change loss function for the real thing
+
         self.calc_loss()
         self.optimizer = tf.train.MomentumOptimizer(1e-3, 0.9)
         self.train_op = self.optimizer.minimize(self.loss)
@@ -37,7 +36,7 @@ class ResNet():
         """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
-        self.loss = value_loss
+        self.loss = value_loss + policy_loss
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
