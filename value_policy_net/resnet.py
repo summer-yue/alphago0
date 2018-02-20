@@ -26,8 +26,8 @@ class ResNet():
         self.optimizer = tf.train.MomentumOptimizer(1e-3, 0.9)
         self.train_op = self.optimizer.minimize(self.loss)
 
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+        self.sess = tf.get_default_session()
+        self.sess.run(tf.global_variables_initializer())
 
     def calc_loss(self):
         """Calculate the loss function for the policy-value network
@@ -119,7 +119,7 @@ class ResNet():
             saver = tf.train.Saver(max_to_keep=500)
 
         with tf.Session() as sess:
-            sess.run(
+            self.sess.run(
                 self.train_op,
                 feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
             )
@@ -162,29 +162,22 @@ class ResNet():
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
         
         #split into batches
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            for epoch in range(epoch_num):
-                losses = []
-                for batch_data, batch_p, batch_v in self.generate_mini_batches(batch_size, fake_x, fake_yp, fake_yv):
-                    _, batch_loss = sess.run(
-                            [self.train_op, self.loss],
-                            feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
-                        )
-                    # fitted_loss = sess.run(
-                    #     self.loss,
-                    #     feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
-                    #     )
-                    losses.append(batch_loss)
-                    #print(batch_loss)
-                print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
-                # print("loss for epoch number " + str(epoch) + ":" + str(sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv})))
-
-            #print("predicting for:" + str(fake_x[0]))
-            print("Expected labels:" + str(fake_yv[0:10]))
-            print("Predicted labels:")
-            #print(sess.run(self.yp_, feed_dict={self.x: [fake_x[0]]}))
-            print(sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
+        for epoch in range(epoch_num):
+            losses = []
+            for batch_data, batch_p, batch_v in self.generate_mini_batches(batch_size, fake_x, fake_yp, fake_yv):
+                _, batch_loss = self.sess.run(
+                        [self.train_op, self.loss],
+                        feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
+                    )
+                
+                losses.append(batch_loss)
+                #print(batch_loss)
+            print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
+            
+        #print("predicting for:" + str(fake_x[0]))
+        print("Expected labels:" + str(fake_yv[0:10]))
+        print("Predicted labels:")
+        print(self.sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
 
     def predict(self, board, model_path=None):
         """Given a board. predict (p,v) according to the current res net
@@ -202,18 +195,17 @@ class ResNet():
             saver.restore(sess, model_path)
         p_dist = {}
         input_to_nn = self.convert_to_one_hot_go_boards(board.board_grid)
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            p = sess.run(self.yp_, feed_dict={self.x: [input_to_nn]})
-            v = sess.run(self.yv_, feed_dict={self.x: [input_to_nn]})
 
-            p = p[0]
-            p_dist[(-1, -1)] = p[self.go_board_dimension**2]
-            for r in range(self.go_board_dimension):
-                for c in range(self.go_board_dimension):
-                    p_dist[(r, c)] = p[r * self.go_board_dimension + c]
-            
-            return p_dist, v
+        p = self.sess.run(self.yp_, feed_dict={self.x: [input_to_nn]})
+        v = self.sess.run(self.yv_, feed_dict={self.x: [input_to_nn]})
+
+        p = p[0]
+        p_dist[(-1, -1)] = p[self.go_board_dimension**2]
+        for r in range(self.go_board_dimension):
+            for c in range(self.go_board_dimension):
+                p_dist[(r, c)] = p[r * self.go_board_dimension + c]
+        
+        return p_dist, v
 
     def convert_to_one_hot_go_boards(self, original_board):
         """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.

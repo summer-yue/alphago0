@@ -110,7 +110,7 @@ class MCTS():
         """
         for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
-            print("simulation number:", i)
+            # print("simulation number:", i)
 
         #Pick the mostly explored edge for root node
         root_edges = self.root_node.edges

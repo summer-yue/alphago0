@@ -2,6 +2,7 @@ from self_play import self_play
 from go import go_board
 from value_policy_net import resnet
 from self_play import mcts
+import tensorflow as tf
 
 BLACK = 1
 WHITE = -1
@@ -23,32 +24,34 @@ class AlphaGoZero():
         batch_training_labels_p = []
         batch_training_labels_v = []
 
-        self.nn = resnet.ResNet(go_board_dimension = 5)
+        sess = tf.Session()
+        with sess.as_default():
+            self.nn = resnet.ResNet(go_board_dimension = 5)
 
-        for i in range(training_game_number):
-            print("training game:", i+1)
-            board = go_board.go_board(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
-            ts = mcts.MCTS(board, self.nn)
-            play = self_play.self_play(board, self.nn)
+            for i in range(training_game_number):
+                print("training game:", i+1)
+                board = go_board.go_board(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
+                ts = mcts.MCTS(board, self.nn)
+                play = self_play.self_play(board, self.nn)
 
-            training_boards, training_labels_p, training_labels_v = play.play_till_finish()
-            batch_training_sample_size += len(training_labels_v)
-            
-            print("batch_training_sample_size:", batch_training_sample_size)
-            if batch_training_sample_size < BATCH_SIZE:
-                batch_training_boards += training_boards
-                batch_training_labels_p += batch_training_labels_p
-                batch_training_labels_v += training_labels_v
-            else:
-                model_path = self.model_path + '/batch_' + str(i)
-                self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
-                batch_training_boards = training_boards
-                batch_training_labels_p = batch_training_labels_p
-                batch_training_labels_v = training_labels_v
+                training_boards, training_labels_p, training_labels_v = play.play_till_finish()
+                batch_training_sample_size += len(training_labels_v)
+                
+                print("batch_training_sample_size:", batch_training_sample_size)
+                if batch_training_sample_size < BATCH_SIZE:
+                    batch_training_boards += training_boards
+                    batch_training_labels_p += batch_training_labels_p
+                    batch_training_labels_v += training_labels_v
+                else:
+                    model_path = self.model_path + '/batch_' + str(i)
+                    self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                    batch_training_boards = training_boards
+                    batch_training_labels_p = batch_training_labels_p
+                    batch_training_labels_v = training_labels_v
 
-        #Train the rest
-        model_path = self.model_path + '/final'
-        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+            #Train the rest
+            model_path = self.model_path + '/final'
+            self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
 
     def play_with_raw_nn(self, board):
         """Play a move with the raw res net
