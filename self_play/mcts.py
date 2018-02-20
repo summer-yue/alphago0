@@ -11,7 +11,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, simluation_number = 400, random_seed = 2):
+    def __init__(self, board, nn, simluation_number = 10, random_seed = 2):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)

@@ -1,4 +1,5 @@
 from self_play import mcts
+import numpy as np
 
 class self_play():
     """Algorithm plays against itself till the game ends and produce a set of (board, policy, result)
@@ -17,8 +18,8 @@ class self_play():
         """
         self.nn = nn
         self.current_board = starting_board
-        self.policies = []
-        self.history_boards = [] #Records all the board config played in this self play session
+        self.policies = np.empty(0)
+        self.history_boards = np.empty(0) #Records all the board config played in this self play session
 
     def play_one_move(self):
         """Use MCTS to calculate the pi for current node, 
@@ -34,8 +35,8 @@ class self_play():
 
         print("move is:", move)
 
-        self.policies.append(policy)
-        self.history_boards.append(self.current_board) #Save current board to history
+        self.policies = np.append(self.policies, policy)
+        self.history_boards = np.append(self.history_boards, self.current_board) #Save current board to history
         self.current_board = new_board #Update current board to board after move
 
         return move == (-1, -1)
@@ -43,9 +44,9 @@ class self_play():
     def play_till_finish(self):
         """Play until the game reaches a final state (2 passes happen one after another)
         Returns:
-            new_training_data: A list of board_grid ready to be used as training data
-            self.policies: a list of result ready to be used as policy training labels
-            new_training_labels_v: a list of result ready to be used as value training labels
+            new_training_data: An array of board_grid ready to be used as training data
+            self.policies: an array of result ready to be used as policy training labels
+            new_training_labels_v: an array of result ready to be used as value training labels
         """
         passed_once = False
         game_over = False
@@ -59,8 +60,7 @@ class self_play():
                     passed_once = True
 
         winner = go_utils_terminal.evaluate_winner(current_board.board_grid)
-
-        new_training_labels_v = [winner] * len(history_board.sboard_grid)
+        new_training_labels_v = np.full(len(history_board.board_grid), winner)
 
         return history_board.board_grid, self.policies, new_training_labels_v
 

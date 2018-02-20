@@ -10,7 +10,7 @@ class AlphaGoZero():
     def __init__(self, model_path):
         self.model_path = model_path
 
-    def train_nn(self, training_game_number = 500):
+    def train_nn(self, training_game_number = 8):
         """Training the resnet by self play using MCTS
         Args:
             training_game_number: number of self play games
@@ -45,6 +45,10 @@ class AlphaGoZero():
                 batch_training_boards = training_boards
                 batch_training_labels_p = batch_training_labels_p
                 batch_training_labels_v = training_labels_v
+
+        #Train the rest
+        model_path = self.model_path + '/final'
+        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
 
     def play_with_raw_nn(self, board):
         """Play a move with the raw res net
