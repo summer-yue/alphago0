@@ -1,4 +1,5 @@
 from self_play import mcts
+from go import go_utils_terminal
 import numpy as np
 
 class self_play():
@@ -30,12 +31,15 @@ class self_play():
         """
 
         ts_instance = mcts.MCTS(self.current_board, self.nn)
-        print("Starting to run the simulations")
         new_board, move, policy = ts_instance.run_all_simulations()
 
         print("move is:", move)
 
-        self.policies = np.append(self.policies, policy)
+        if len(self.policies) == 0:
+            self.policies = policy
+        else:
+            self.policies = np.vstack((self.policies, policy))
+
         self.history_boards = np.append(self.history_boards, self.current_board) #Save current board to history
         self.current_board = new_board #Update current board to board after move
 
@@ -59,8 +63,12 @@ class self_play():
                 else:
                     passed_once = True
 
-        winner = go_utils_terminal.evaluate_winner(current_board.board_grid)
-        new_training_labels_v = np.full(len(history_board.board_grid), winner)
+        winner, _ = go_utils_terminal.evaluate_winner(self.current_board.board_grid)
+        print("len(self.history_boards)", len(self.history_boards))
+        new_training_labels_v = np.array([[winner]]*len(self.history_boards))
 
-        return history_board.board_grid, self.policies, new_training_labels_v
+        print("a game is finished")
+        print(len(self.policies))
+        print(len(new_training_labels_v))
+        return np.array([history_board.board_grid for history_board in self.history_boards]), self.policies, new_training_labels_v
 

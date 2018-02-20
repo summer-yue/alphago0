@@ -46,7 +46,7 @@ setup(
     #
     packages=find_packages(exclude=['tests']),  # Required
 
-    install_requires=['tensorflow', 'pygame', 'numpy'],  # Optional
+    install_requires=['tensorflow', 'pygame', 'numpy', 'pyprind'],  # Optional
     python_requires='>=3',
 
     # extras_require={  # Optional

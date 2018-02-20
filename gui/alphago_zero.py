@@ -2,6 +2,9 @@ from self_play import self_play
 from go import go_board
 from value_policy_net import resnet
 from self_play import mcts
+from pyprind import prog_bar
+import numpy as np
+
 import tensorflow as tf
 
 BLACK = 1
@@ -11,24 +14,25 @@ class AlphaGoZero():
     def __init__(self, model_path):
         self.model_path = model_path
 
-    def train_nn(self, training_game_number = 8):
+    def train_nn(self, training_game_number = 100):
         """Training the resnet by self play using MCTS
         Args:
             training_game_number: number of self play games
         Returns:
             Nothing, but model_path/game_1 has the model trained
         """
-        BATCH_SIZE = 100
+        BATCH_SIZE = 20
         BLACK = 1 # black goes first
-        batch_training_boards = []
-        batch_training_labels_p = []
-        batch_training_labels_v = []
+        batch_training_sample_size = 0
+        batch_training_boards = np.empty(0)
+        batch_training_labels_p = np.empty(0)
+        batch_training_labels_v = np.empty(0)
 
         sess = tf.Session()
         with sess.as_default():
             self.nn = resnet.ResNet(go_board_dimension = 5)
 
-            for i in range(training_game_number):
+            for i in prog_bar(range(training_game_number)):
                 print("training game:", i+1)
                 board = go_board.go_board(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
                 ts = mcts.MCTS(board, self.nn)
@@ -38,17 +42,37 @@ class AlphaGoZero():
                 batch_training_sample_size += len(training_labels_v)
                 
                 print("batch_training_sample_size:", batch_training_sample_size)
+
                 if batch_training_sample_size < BATCH_SIZE:
-                    batch_training_boards += training_boards
-                    batch_training_labels_p += batch_training_labels_p
-                    batch_training_labels_v += training_labels_v
-                else:
+                    if len(batch_training_boards) == 0:
+                        batch_training_boards = training_boards
+                    else:
+                        batch_training_boards = np.append(batch_training_boards, training_boards, axis=0)
+                    if len(batch_training_labels_p) == 0:
+                        batch_training_labels_p = training_labels_p
+                    else:
+                        batch_training_labels_p = np.append(batch_training_labels_p, training_labels_p, axis=0)
+                    if len(batch_training_labels_v) == 0:
+                        batch_training_labels_v = training_labels_v
+                    else:
+                        batch_training_labels_v = np.append(batch_training_labels_v, training_labels_v, axis=0)
+                    print(batch_training_boards.shape)
+                    print(batch_training_labels_p.shape)
+                    print(batch_training_labels_v.shape)
+                elif batch_training_sample_size > 0:
+                    print("start training")
+                    print(batch_training_boards.shape)
+                    print(batch_training_labels_p.shape)
+                    print(batch_training_labels_v.shape)
                     model_path = self.model_path + '/batch_' + str(i)
                     self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     batch_training_boards = training_boards
-                    batch_training_labels_p = batch_training_labels_p
+                    batch_training_labels_p = training_labels_p
                     batch_training_labels_v = training_labels_v
-
+                else:
+                    model_path = self.model_path + '/batch_' + str(i)
+                    self.nn.train(training_boards, training_labels_p, training_labels_v, model_path)
+               
             #Train the rest
             model_path = self.model_path + '/final'
             self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)

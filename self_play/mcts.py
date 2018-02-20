@@ -4,6 +4,7 @@ import random
 import time
 import numpy as np
 
+from pyprind import prog_bar
 from go import go_utils
 from math import sqrt
 
@@ -11,7 +12,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, simluation_number = 10, random_seed = 2):
+    def __init__(self, board, nn, simluation_number = 100, random_seed = 2):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)
@@ -138,12 +139,18 @@ class MCTS():
                 policy[r*self.nn.go_board_dimension+c] = edge.N * 1.0 / sum_N
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
-        policy_with_noise = 0.75 * policy + 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
+        policy_with_noise = 0.75 * policy 
+        noise = 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
+        policy_with_noise = [ p + noise[i] if abs(p) > 1e-3 else p for (i, p) in enumerate(policy_with_noise)]
+        sum_prob = sum(policy_with_noise)
+        policy_with_noise = [p / sum_prob for p in policy_with_noise]
         move_indices = [i for i in range(26)]
         move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
        
         r = int(move_index / self.nn.go_board_dimension)
         c = move_index % self.nn.go_board_dimension
         move = (r, c)
+        #Without noise for debugging
+        move = most_used_edge.move
 
         return new_board, move, policy

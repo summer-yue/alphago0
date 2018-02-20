@@ -8,7 +8,7 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, go_board_dimension = 2):
+    def __init__(self, go_board_dimension = 5):
         """Initialize a supervised learning res net model
         Args:
             go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
@@ -72,7 +72,7 @@ class ResNet():
             return A
 
     def build_network(self, x):
-        """ResNet structure TODO: @Ben make this prettier.
+        """ResNet structure
         Args:
             x: input as a tf placeholder of dimension board_dim*board_dim*3
         Returns:
@@ -113,18 +113,16 @@ class ResNet():
         Returns:
             None, but a model is saved at the model_path
         """
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
+        training_boards = np.array([self.convert_to_one_hot_go_boards(board) for board in training_boards])
         if model_path:
             saver = tf.train.Saver(max_to_keep=500)
 
-        with tf.Session() as sess:
-            self.sess.run(
-                self.train_op,
-                feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
-            )
-            if model_path:
-                save_path = saver.save(sess, model_path)
+        self.sess.run(
+            self.train_op,
+            feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
+        )
+        if model_path:
+            save_path = saver.save(self.sess, model_path)
 
     def generate_mini_batches(self, batch_size, train_data, train_labels_p, train_labels_v):
         """ Yield mini batches in tuples from the original dataset with a specified batch size
