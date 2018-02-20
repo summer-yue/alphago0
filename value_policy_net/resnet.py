@@ -24,7 +24,7 @@ class ResNet():
             
         # TODO change loss function for the real thing
         self.calc_loss()
-        self.optimizer = tf.train.AdamOptimizer(0.001, beta1=0.9, beta2=0.999, epsilon=1e-08,)
+        self.optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.9, beta2=0.999, epsilon=1e-05,)
         self.train_op = self.optimizer.minimize(self.loss)
 
         with tf.Session() as sess:
@@ -37,8 +37,7 @@ class ResNet():
         """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
-        policy_loss = 0.0
-        self.loss = value_loss + policy_loss
+        self.loss = value_loss
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
@@ -84,7 +83,7 @@ class ResNet():
 
         A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
-        for i in range(10):
+        for i in range(2):
             A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
 
         #Policy head
@@ -123,27 +122,50 @@ class ResNet():
         with tf.Session() as sess:
             sess.run(
                 self.train_op,
-                feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv:training_labels_v}
+                feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
             )
             if model_path:
                 save_path = saver.save(sess, model_path)
 
+    def generate_mini_batches(self, batch_size, train_data, train_labels_p, train_labels_v):
+        """ Yield mini batches in tuples from the original dataset with a specified batch size
+        Params: 
+            batch_size: number of training data in a sample
+            train_data: all of train boards after shuffling
+            train_labels_p: all of train labels [None, dim x dim + 1] after shuffling
+            train_labels_v: all of train labels [None, 1] after shuffling
+        Return:
+            A generator yielding each mini batch([batch_num, dim x dim], [batch_num, dim x dim + 1], [batch_num, 1])
+        Notes:
+            the last data not divisible by mini-batch is thrown away
+        """
+        train_data_num = len(train_data)
+        for i in range(int(train_data_num / batch_size)):
+            start_slice_index = i * batch_size
+            end_slice_index = (i + 1) * batch_size
+            yield (train_data[start_slice_index:end_slice_index],
+                   train_labels_p[start_slice_index:end_slice_index],
+                   train_labels_v[start_slice_index:end_slice_index])
+
     def fake_train(self, model_path, training_data_num = 10000):
-        """This function is ued for testing the resNet independent of the mcts and self play code.
+        """This function is used for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
         This code is used in test only.
         """
-        fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num, 5)
-        print(np.array(fake_x).shape)
-        print(np.array(fake_yp).shape)
-        print(np.array(fake_yv).shape)
+        batch_size = 100
+        epoch_num = 20
+        fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
+
+        #split into batches
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            sess.run(
-                self.train_op,
-                feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv:fake_yv}
-            )
-            print("loss", sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv}))
+            for epoch in range(epoch_num):
+                for batch_data, batch_p, batch_v in self.generate_mini_batches(batch_size, fake_x, fake_yp, fake_yv):
+                    sess.run(
+                        self.train_op,
+                        feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
+                    )
+                print("loss for epoch number " + str(epoch) + ":" + str(sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv})))
 
             #print("predicting for:" + str(fake_x[0]))
             print("Expected labels:" + str(fake_yv[0]))
@@ -205,7 +227,7 @@ class ResNet():
         }
         return transformation[element]
 
-    def generate_fake_data(self, training_data_num, go_board_dimension):
+    def generate_fake_data(self, training_data_num):
         """Generate fake boards and counts the number of black and white stones as labels.
         Args:
             training_data_num: the number of fake training data we want to generate
@@ -214,6 +236,7 @@ class ResNet():
             Ys: a list of training labels, each label is: 
             [a size 26 one hot arrayindicating the count the total number stones, integer indicating black(1) or white(-1) has more stones]
         """
+        go_board_dimension = self.go_board_dimension
         Xs = []
         total_stone_count_vectors = []
         player_with_more_stones_all = []
@@ -244,4 +267,5 @@ class ResNet():
                 player_with_more_stones = float(0)
             total_stone_count_vectors.append(total_stone_count_vector)
             player_with_more_stones_all.append([float(player_with_more_stones)])
+
         return Xs, total_stone_count_vectors, player_with_more_stones_all
