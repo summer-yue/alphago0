@@ -8,7 +8,7 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, go_board_dimension = 5):
+    def __init__(self, go_board_dimension = 2):
         """Initialize a supervised learning res net model
         Args:
             go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
@@ -24,7 +24,7 @@ class ResNet():
             
         # TODO change loss function for the real thing
         self.calc_loss()
-        self.optimizer = tf.train.AdamOptimizer(0.0001, beta1=0.9, beta2=0.999, epsilon=1e-05,)
+        self.optimizer = tf.train.MomentumOptimizer(1e-3, 0.9)
         self.train_op = self.optimizer.minimize(self.loss)
 
         with tf.Session() as sess:
@@ -50,8 +50,8 @@ class ResNet():
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
             Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
             Z = tf.layers.batch_normalization(Z)
-            A = tf.nn.relu(Z)
-            A = A + res_tensor
+            A = Z + res_tensor
+            A = tf.nn.relu(A)
             return A
 
     def build_res_block(self, input_tensor, varscope):
@@ -83,7 +83,7 @@ class ResNet():
 
         A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
-        for i in range(2):
+        for i in range(5):
             A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
 
         #Policy head
@@ -139,7 +139,13 @@ class ResNet():
         Notes:
             the last data not divisible by mini-batch is thrown away
         """
+        print("Shuffling data...",)
         train_data_num = len(train_data)
+        idx = np.random.permutation(train_data_num)
+        train_data = train_data[idx]
+        train_labels_p = train_labels_p[idx]
+        train_labels_v = train_labels_v[idx]
+        print("Done!")
         for i in range(int(train_data_num / batch_size)):
             start_slice_index = i * batch_size
             end_slice_index = (i + 1) * batch_size
@@ -147,28 +153,36 @@ class ResNet():
                    train_labels_p[start_slice_index:end_slice_index],
                    train_labels_v[start_slice_index:end_slice_index])
 
-    def fake_train(self, model_path, training_data_num = 10000):
+    def fake_train(self, model_path, training_data_num = 500):
         """This function is used for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
         This code is used in test only.
         """
         batch_size = 100
-        epoch_num = 20
+        epoch_num = 200
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
-
+        
         #split into batches
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for epoch in range(epoch_num):
+                losses = []
                 for batch_data, batch_p, batch_v in self.generate_mini_batches(batch_size, fake_x, fake_yp, fake_yv):
-                    sess.run(
-                        self.train_op,
-                        feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
-                    )
-                print("loss for epoch number " + str(epoch) + ":" + str(sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv})))
+                    _, batch_loss = sess.run(
+                            [self.train_op, self.loss],
+                            feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
+                        )
+                    # fitted_loss = sess.run(
+                    #     self.loss,
+                    #     feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
+                    #     )
+                    losses.append(batch_loss)
+                    #print(batch_loss)
+                print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
+                # print("loss for epoch number " + str(epoch) + ":" + str(sess.run(self.loss, feed_dict={self.x: fake_x, self.yp: fake_yp, self.yv: fake_yv})))
 
             #print("predicting for:" + str(fake_x[0]))
-            print("Expected labels:" + str(fake_yv[0]))
+            print("Expected labels:" + str(fake_yv[0:10]))
             print("Predicted labels:")
             #print(sess.run(self.yp_, feed_dict={self.x: [fake_x[0]]}))
             print(sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
@@ -268,4 +282,4 @@ class ResNet():
             total_stone_count_vectors.append(total_stone_count_vector)
             player_with_more_stones_all.append([float(player_with_more_stones)])
 
-        return Xs, total_stone_count_vectors, player_with_more_stones_all
+        return np.array(Xs), np.array(total_stone_count_vectors), np.array(player_with_more_stones_all)
