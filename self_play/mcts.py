@@ -2,6 +2,7 @@ from self_play import edge
 from self_play import node
 import random
 import time
+import numpy as np
 
 from go import go_utils
 from math import sqrt
@@ -10,7 +11,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, simluation_number = 1000, random_seed = 2):
+    def __init__(self, board, nn, simluation_number = 400, random_seed = 2):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)
@@ -20,9 +21,10 @@ class MCTS():
             self.nn: instance of AlphaGo0 model used for this iteration of self play
         """
         self.simluation_number_remaining = simluation_number
-        self.root_node = node.node(board, parent_edge = None, edges=[], action_value=0)
-        self.random_seed = random_seed
         self.nn = nn
+        move_p_dist_root, _ = self.nn.predict(board)
+        self.root_node = node.node(board, parent_edge = None, edges=[], action_value=0, move_p_dist=move_p_dist_root)
+        self.random_seed = random_seed
 
     def calculate_U_for_edge(self, parent_node, edge):
         """ Calculate U (related to prior probability and explore factor) for an edge using
@@ -64,8 +66,7 @@ class MCTS():
 
         #expand and evaluate
         current_board = current_node.go_board
-
-        (move_p_dist, v) = self.nn.predict(current_board)
+        (move_p_dist, v) = current_node.move_p_dist, current_node.action_value
 
         for next_move in move_p_dist:
             p = move_p_dist[next_move]
@@ -76,14 +77,11 @@ class MCTS():
                 new_edge = edge.edge(from_node=current_node, to_node=None, W=0, Q=0, N=0, P=p, move=next_move)
                 current_node.edges.append(new_edge)
 
-                #TODO: @Summer: change to predict function from real alphago0 instance
-                #_, action_value_next_node = self.nn.predict(new_board)
-                action_value_next_node = 0.2
-
-                next_node = node.node(new_board, new_edge, edges=[], action_value=action_value_next_node)
+                move_p_dist_next_node, action_value_next_node = self.nn.predict(new_board)
+     
+                next_node = node.node(new_board, new_edge, edges=[], action_value=action_value_next_node, move_p_dist=move_p_dist_next_node)
                 new_edge.to_node = next_node
 
-                #TODO @Summer: batch the evaluation step here with resNet to improve efficiency
                 #backup from leaf node next_node to root
                 while next_node.parent_edge != None: #Continue when it is not root node
                     next_node.parent_edge.N = next_node.parent_edge.N + 1
@@ -112,23 +110,24 @@ class MCTS():
         """
         for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
+            print("simulation number:", i)
 
         #Pick the mostly explored edge for root node
         root_edges = self.root_node.edges
         most_used_edge = None
         most_explored_time = 0
      
-        #print(len(root_edges))
         most_explored_time = max([edge.N for edge in root_edges])
         potential_most_used_edges = [edge for edge in root_edges if edge.N == most_explored_time]
       
         #Pick the next move
-        r = random.Random(self.random_seed)
-        most_used_edge = r.choice(potential_most_used_edges)
+        rand = random.Random(self.random_seed)
+        most_used_edge = rand.choice(potential_most_used_edges)
         move = most_used_edge.move
+
         new_board = most_used_edge.to_node.go_board
 
-        policy = [0] * (self.nn.go_board_dimension*self.nn.go_board_dimension+1)
+        policy = np.zeros(self.nn.go_board_dimension*self.nn.go_board_dimension+1)
         sum_N = sum([edge.N for edge in root_edges])
         for edge in root_edges:
             (r, c) = edge.move
@@ -137,5 +136,14 @@ class MCTS():
                 policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = edge.N * 1.0 / sum_N
             else:
                 policy[r*self.nn.go_board_dimension+c] = edge.N * 1.0 / sum_N
+
+        #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
+        policy_with_noise = 0.75 * policy + 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
+        move_indices = [i for i in range(26)]
+        move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
+       
+        r = int(move_index / self.nn.go_board_dimension)
+        c = move_index % self.nn.go_board_dimension
+        move = (r, c)
 
         return new_board, move, policy

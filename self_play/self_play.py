@@ -51,6 +51,7 @@ class self_play():
         game_over = False
         while not game_over:
             is_passed = self.play_one_move()
+        
             if is_passed:
                 if passed_once:
                     game_over = True

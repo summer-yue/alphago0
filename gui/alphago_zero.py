@@ -10,14 +10,19 @@ class AlphaGoZero():
     def __init__(self, model_path):
         self.model_path = model_path
 
-    def train_nn(self, training_game_number = 1):
+    def train_nn(self, training_game_number = 500):
         """Training the resnet by self play using MCTS
         Args:
             training_game_number: number of self play games
         Returns:
             Nothing, but model_path/game_1 has the model trained
         """
+        BATCH_SIZE = 100
         BLACK = 1 # black goes first
+        batch_training_boards = []
+        batch_training_labels_p = []
+        batch_training_labels_v = []
+
         self.nn = resnet.ResNet(go_board_dimension = 5)
 
         for i in range(training_game_number):
@@ -27,12 +32,19 @@ class AlphaGoZero():
             play = self_play.self_play(board, self.nn)
 
             training_boards, training_labels_p, training_labels_v = play.play_till_finish()
+            batch_training_sample_size += len(training_labels_v)
             
-            if i % 1 == 0:
-                model_path = self.model_path + '/game_' + str(i)
-                self.nn.train(training_boards, training_labels_p, training_labels_v, model_path)
-            else: # Train without saving
-                self.nn.train(training_boards, training_labels_p, training_labels_v)
+            print("batch_training_sample_size:", batch_training_sample_size)
+            if batch_training_sample_size < BATCH_SIZE:
+                batch_training_boards += training_boards
+                batch_training_labels_p += batch_training_labels_p
+                batch_training_labels_v += training_labels_v
+            else:
+                model_path = self.model_path + '/batch_' + str(i)
+                self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                batch_training_boards = training_boards
+                batch_training_labels_p = batch_training_labels_p
+                batch_training_labels_v = training_labels_v
 
     def play_with_raw_nn(self, board):
         """Play a move with the raw res net

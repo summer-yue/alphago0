@@ -2,8 +2,8 @@ import unittest
 import numpy.testing as npt
 import math
 
-import go_board as gb
-from go_utils_terminal import *
+from go import go_board as gb
+from go.go_utils_terminal import *
 
 class GoUtilsTerminalTest(unittest.TestCase):
     def test_find_connected_empty_pieces_1(self):
@@ -60,6 +60,14 @@ class GoUtilsTerminalTest(unittest.TestCase):
                        [0, 1,-1, 0, 0],
                        [1,-1, 0, 0, 0]]
         self.assertEqual(evaluate_winner(board_grid), (-1, 5)) #white 14 black 9
+
+    def test_evaluate_winner_3(self):
+        board_grid = [ [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0]]
+        self.assertEqual(evaluate_winner(board_grid), (-1, 0)) #white 14 black 11
 
 if __name__ == '__main__':
     unittest.main()
