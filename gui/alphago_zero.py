@@ -22,7 +22,7 @@ class AlphaGoZero():
         with self.sess.as_default():
             self.nn = resnet.ResNet(go_board_dimension = 5, model_path = model_path, restored=restored)
 
-    def train_nn(self, training_game_number = 100):
+    def train_nn(self, training_game_number = 1000):
         """Training the resnet by self play using MCTS
         Args:
             training_game_number: number of self play games
@@ -46,8 +46,6 @@ class AlphaGoZero():
                 training_boards, training_labels_p, training_labels_v = play.play_till_finish()
                 batch_training_sample_size += len(training_labels_v)
                 
-                print("batch_training_sample_size:", batch_training_sample_size)
-
                 if batch_training_sample_size < BATCH_SIZE:
                     if len(batch_training_boards) == 0:
                         batch_training_boards = training_boards
@@ -61,14 +59,7 @@ class AlphaGoZero():
                         batch_training_labels_v = training_labels_v
                     else:
                         batch_training_labels_v = np.append(batch_training_labels_v, training_labels_v, axis=0)
-                    print(batch_training_boards.shape)
-                    print(batch_training_labels_p.shape)
-                    print(batch_training_labels_v.shape)
                 elif batch_training_sample_size > 0:
-                    print("start training")
-                    print(batch_training_boards.shape)
-                    print(batch_training_labels_p.shape)
-                    print(batch_training_labels_v.shape)
                     model_path = self.model_path + '/batch_' + str(i)
                     self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     batch_training_boards = training_boards
