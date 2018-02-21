@@ -8,11 +8,12 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, go_board_dimension = 5):
+    def __init__(self, go_board_dimension = 5, model_path=None):
         """Initialize a supervised learning res net model
         Args:
             go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
                 the default is 5*5 so it's convenient to train and run tests on.
+            model_path: path to the model to be restored from
         """
         self.go_board_dimension = go_board_dimension
 
@@ -28,6 +29,10 @@ class ResNet():
 
         self.sess = tf.get_default_session()
         self.sess.run(tf.global_variables_initializer())
+
+        if model_path:
+            saver = tf.train.Saver(max_to_keep=500)
+            saver.restore(self.sess, model_path)
 
     def calc_loss(self):
         """Calculate the loss function for the policy-value network
@@ -177,7 +182,7 @@ class ResNet():
         print("Predicted labels:")
         print(self.sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
 
-    def predict(self, board, model_path=None):
+    def predict(self, board):
         """Given a board. predict (p,v) according to the current res net
         Args:
             board: current board including the current player and stone distribution
@@ -188,9 +193,7 @@ class ResNet():
             v: the probability of winning from this board.
         """
         #TODO: add current player to the input
-        if model_path:
-            saver = tf.train.Saver(max_to_keep=500)
-            saver.restore(sess, model_path)
+
         p_dist = {}
         input_to_nn = self.convert_to_one_hot_go_boards(board.board_grid)
 
