@@ -50,7 +50,7 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
-        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="./models/final")
+        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="../models/final", restored=True)
 
     def machine_responds(self):
         #print("machine responds")

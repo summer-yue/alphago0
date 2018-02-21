@@ -11,11 +11,16 @@ BLACK = 1
 WHITE = -1
 
 class AlphaGoZero():
-    def __init__(self, model_path):
+    def __init__(self, model_path, restored):
+        """
+        Args:
+            model_path: path to the model to be restored from or save to
+            restored: boolean indicating if we want to restore a saved model
+        """
         self.model_path = model_path
         self.sess = tf.Session()
         with self.sess.as_default():
-            self.nn = resnet.ResNet(go_board_dimension = 5, model_path = model_path)
+            self.nn = resnet.ResNet(go_board_dimension = 5, model_path = model_path, restored=restored)
 
     def train_nn(self, training_game_number = 100):
         """Training the resnet by self play using MCTS
@@ -105,6 +110,6 @@ class AlphaGoZero():
         pass
         
 if __name__ == '__main__':
-    alphpago0 = AlphaGoZero(model_path="../models")
+    alphpago0 = AlphaGoZero(model_path="../models", restored=False)
     alphpago0.train_nn()
     

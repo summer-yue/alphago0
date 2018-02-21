@@ -103,8 +103,7 @@ class MCTS():
                     for next_node_edge in next_node.edges:
                         next_node.action_value += next_node_edge.to_node.action_value
                         child_node_counter += 1
-                    #print("child_node_counter:", child_node_counter)
-                    #print("next_node.action_value", next_node.action_value)
+                   
                     next_node.action_value /= child_node_counter
 
     def run_all_simulations(self):
@@ -119,46 +118,42 @@ class MCTS():
         """
         for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
-            # print("simulation number:", i)
 
-        #Pick the mostly explored edge for root node
+        np.random.seed(seed=self.random_seed)
+        #Pick the most explored move for root node with randomization
         root_edges = self.root_node.edges
-        most_used_edge = None
-        most_explored_time = 0
-     
-        most_explored_time = max([edge.N for edge in root_edges])
-        potential_most_used_edges = [edge for edge in root_edges if edge.N == most_explored_time]
-      
-        #Pick the next move
-        rand = random.Random(self.random_seed)
-        most_used_edge = rand.choice(potential_most_used_edges)
-        move = most_used_edge.move
-
-        new_board = most_used_edge.to_node.go_board
-
+    
         policy = np.zeros(self.nn.go_board_dimension*self.nn.go_board_dimension+1)
         sum_N = sum([edge.N for edge in root_edges])
         for edge in root_edges:
             (r, c) = edge.move
             if (r == -1) and (c == -1): #Pass
-                #TODO: add temparature term for exploration
-                policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = edge.N * 1.0 / sum_N
+                policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = (edge.N * 1.0 / sum_N)**2
             else:
-                policy[r*self.nn.go_board_dimension+c] = edge.N * 1.0 / sum_N
+                policy[r*self.nn.go_board_dimension+c] = (edge.N * 1.0 / sum_N)**2 #Temparature = 0.5 intermediate amount of exploration
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
-        policy_with_noise = 0.75 * policy 
+        policy_with_noise = 0.75 * policy
+        sum_prob = sum(policy)
+        policy = [p / sum_prob for p in policy]
         noise = 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
+        #Not adding noise to moves where p = 0
         policy_with_noise = [ p + noise[i] if abs(p) > 1e-3 else p for (i, p) in enumerate(policy_with_noise)]
+        #Make probbilities add up to zero
         sum_prob = sum(policy_with_noise)
         policy_with_noise = [p / sum_prob for p in policy_with_noise]
         move_indices = [i for i in range(26)]
+  
         move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
-       
-        r = int(move_index / self.nn.go_board_dimension)
-        c = move_index % self.nn.go_board_dimension
-        move = (r, c)
-        #Without noise for debugging
-        move = most_used_edge.move
+
+        if move_index == self.nn.go_board_dimension**2:
+            move = (-1, -1)
+        else:
+            r = int(move_index / self.nn.go_board_dimension)
+            c = move_index % self.nn.go_board_dimension
+            move = (r, c)
+        valid_move, new_board = go_utils.make_move(self.root_node.go_board, move)
+
+        assert valid_move == True
 
         return new_board, move, policy

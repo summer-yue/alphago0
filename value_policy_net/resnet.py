@@ -8,12 +8,13 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, go_board_dimension = 5, model_path=None):
+    def __init__(self, go_board_dimension = 5, model_path=None, restored=False):
         """Initialize a supervised learning res net model
         Args:
             go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
                 the default is 5*5 so it's convenient to train and run tests on.
-            model_path: path to the model to be restored from
+            model_path: path to the model to be restored from or save to
+            restored: boolean indicating if we want to restore a saved model
         """
         self.go_board_dimension = go_board_dimension
 
@@ -30,7 +31,7 @@ class ResNet():
         self.sess = tf.get_default_session()
         self.sess.run(tf.global_variables_initializer())
 
-        if model_path:
+        if restored:
             saver = tf.train.Saver(max_to_keep=500)
             saver.restore(self.sess, model_path)
 
