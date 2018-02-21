@@ -70,7 +70,7 @@ class self_play():
         new_training_labels_v = np.array([[winner]]*len(self.history_boards))
 
         print("a game is finished and winner is:", winner)
-        print(len(self.policies))
-        print(len(new_training_labels_v))
-        return np.array([history_board.board_grid for history_board in self.history_boards]), self.policies, new_training_labels_v
+        print(self.policies)
+        print(new_training_labels_v)
+        return np.array([history_board for history_board in self.history_boards]), self.policies, new_training_labels_v
 

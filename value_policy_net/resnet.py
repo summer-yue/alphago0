@@ -3,6 +3,8 @@ import numpy as np
 import os
 import random
 
+from go import go_board
+
 class ResNet():
     """Go algorithm without human knowledge
     Original paper from: https://www.nature.com/articles/nature24270.pdf
@@ -19,13 +21,14 @@ class ResNet():
         self.go_board_dimension = go_board_dimension
 
         #Define the tensors that compose the graph
-        self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
+        self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 4], name="input")
         self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension*self.go_board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
 
         self.calc_loss()
         self.optimizer = tf.train.MomentumOptimizer(1e-3, 0.9)
+        #self.optimizer = tf.train.AdamOptimizer()
         self.train_op = self.optimizer.minimize(self.loss)
 
         self.sess = tf.get_default_session()
@@ -40,9 +43,10 @@ class ResNet():
         Returns:
             The loss tensor
         """
-        value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
+        value_loss = tf.reduce_mean(tf.square(self.yv - self.yv_))
+        #value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
-        self.loss = value_loss + policy_loss
+        self.loss = value_loss
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
@@ -76,6 +80,16 @@ class ResNet():
             Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A
+
+    def build_fc_network(self, x):
+        v_logits = tf.contrib.layers.flatten(x)
+        for i in range(8):
+            v_logits = tf.contrib.layers.fully_connected(v_logits, 100)
+        v_logits = tf.contrib.layers.fully_connected(v_logits, 10)
+        v_logits = tf.contrib.layers.fully_connected(v_logits, 1)
+        V = tf.nn.tanh(v_logits)
+
+        return V, V, v_logits, v_logits
 
     def build_network(self, x):
         """ResNet structure
@@ -119,7 +133,7 @@ class ResNet():
         Returns:
             None, but a model is saved at the model_path
         """
-        training_boards = np.array([self.convert_to_one_hot_go_boards(board) for board in training_boards])
+        training_boards = np.array([self.convert_to_resnet_input(board) for board in training_boards])
         if model_path:
             saver = tf.train.Saver(max_to_keep=500)
 
@@ -156,13 +170,13 @@ class ResNet():
                    train_labels_p[start_slice_index:end_slice_index],
                    train_labels_v[start_slice_index:end_slice_index])
 
-    def fake_train(self, model_path, training_data_num = 500):
+    def fake_train(self, model_path, training_data_num = 5000):
         """This function is used for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
         This code is used in test only.
         """
-        batch_size = 100
-        epoch_num = 200
+        batch_size = 500
+        epoch_num = 1000
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
         
         #split into batches
@@ -179,7 +193,7 @@ class ResNet():
             print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
             
         #print("predicting for:" + str(fake_x[0]))
-        print("Expected labels:" + str(fake_yv[0:10]))
+        print("Expected labels:" + str(fake_yv[0]))
         print("Predicted labels:")
         print(self.sess.run(self.yv_, feed_dict={self.x: [fake_x[0]]}))
 
@@ -196,7 +210,7 @@ class ResNet():
         #TODO: add current player to the input
 
         p_dist = {}
-        input_to_nn = self.convert_to_one_hot_go_boards(board.board_grid)
+        input_to_nn = self.convert_to_resnet_input(board)
 
         p = self.sess.run(self.yp_, feed_dict={self.x: [input_to_nn]})
         v = self.sess.run(self.yv_, feed_dict={self.x: [input_to_nn]})
@@ -209,16 +223,22 @@ class ResNet():
         
         return p_dist, v
 
-    def convert_to_one_hot_go_boards(self, original_board):
+    def convert_to_resnet_input(self, original_board):
+        converted_grid = np.array(self.convert_to_one_hot_go_boards(original_board.board_grid))   
+        player_layer = np.ones((self.go_board_dimension , self.go_board_dimension , 1)) * original_board.player
+        append_result = np.append(converted_grid, player_layer, axis = 2)
+        return append_result
+
+    def convert_to_one_hot_go_boards(self, original_board_grid):
         """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.
         This is used before feed the boards into the neural net.
         Args:
-            original_board: a board_dimension x board_dimension array, each element can be -1 (white), 0 (empty) or 1 (black).
+            original_board_grid: a board_dimension x board_dimension array, each element can be -1 (white), 0 (empty) or 1 (black).
         Returns:
             flattend_board: a board_dimension x board_dimension array x 3 one hot vector
         """
-        board_dim = len(original_board)
-        return [[self.helper_convert_to_one_hot(original_board[r][c]) for c in range(board_dim)] for r in range(board_dim)]
+        board_dim = len(original_board_grid)
+        return [[self.helper_convert_to_one_hot(original_board_grid[r][c]) for c in range(board_dim)] for r in range(board_dim)]
 
     def helper_convert_to_one_hot(self, element):
         """ Transformation 1 -> [0,0,1]; 0->[0,1,0], -1 -> [-1,0,1]
@@ -241,37 +261,48 @@ class ResNet():
         Returns:
             Xs: a list of training boards
             Ys: a list of training labels, each label is: 
-            [a size 26 one hot arrayindicating the count the total number stones, integer indicating black(1) or white(-1) has more stones]
+            [a size 26 one hot arrayindicating the count the total number stones, layer indicating current player(1) or opponent(-1) has more stones]
         """
         go_board_dimension = self.go_board_dimension
         Xs = []
         total_stone_count_vectors = []
-        player_with_more_stones_all = []
+        player_with_more_stones_all = [] #1 if current player has more stones, -1 otherwise
 
         options = [-1, 0, 1] #white empty black
         for i in range(training_data_num):
             black_stone_count = 0
             white_stone_count = 0
 
-            board = [[random.choice(options) for c in range(go_board_dimension)] for r in range(go_board_dimension)]
+            player = random.choice([-1, 1])
+            board_grid = [[random.choice(options) for c in range(go_board_dimension)] for r in range(go_board_dimension)]
             for r in range(go_board_dimension):
                 for c in range(go_board_dimension):
-                    if board[r][c] == -1:
+                    if board_grid[r][c] == -1:
                         white_stone_count += 1
-                    elif board[r][c] == 1:
+                    elif board_grid[r][c] == 1:
                         black_stone_count += 1
-            Xs.append(self.convert_to_one_hot_go_boards(board))
+            board = go_board.go_board(go_board_dimension, player, board_grid)
+            Xs.append(self.convert_to_resnet_input(board))
 
             total_stone_count = black_stone_count + white_stone_count
             total_stone_count_vector = [0]*(go_board_dimension*go_board_dimension+1)
             total_stone_count_vector[total_stone_count] = 1
 
-            if black_stone_count > white_stone_count:
-                player_with_more_stones = float(1)
-            elif black_stone_count < white_stone_count:
-                player_with_more_stones = float(-1)
-            else:
-                player_with_more_stones = float(0)
+            if player == 1:
+                if black_stone_count > white_stone_count:
+                    player_with_more_stones = float(1)
+                elif black_stone_count < white_stone_count:
+                    player_with_more_stones = float(-1)
+                else:
+                    player_with_more_stones = float(0)
+            elif player == -1:
+                if black_stone_count < white_stone_count:
+                    player_with_more_stones = float(1)
+                elif black_stone_count > white_stone_count:
+                    player_with_more_stones = float(-1)
+                else:
+                    player_with_more_stones = float(0)
+
             total_stone_count_vectors.append(total_stone_count_vector)
             player_with_more_stones_all.append([float(player_with_more_stones)])
 

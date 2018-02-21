@@ -8,6 +8,8 @@ from pyprind import prog_bar
 from go import go_utils
 from math import sqrt
 
+from value_policy_net.tests import go_board_2x2_heuristics as heuristics
+
 class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
@@ -23,6 +25,8 @@ class MCTS():
         """
         self.simluation_number_remaining = simluation_number
         self.nn = nn
+       
+        #self.nn = heuristics.GoBoard2Heuristics()
         move_p_dist_root, _ = self.nn.predict(board)
         self.root_node = node.node(board, parent_edge = None, edges=[], action_value=0, move_p_dist=move_p_dist_root)
         self.random_seed = random_seed

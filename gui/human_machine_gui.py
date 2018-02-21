@@ -50,14 +50,14 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
-        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="../models/final", restored=True)
+        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="../models/batch_400", restored=True)
 
     def machine_responds(self):
         #print("machine responds")
-        #print(self.go_board.board_grid)
+        print(self.go_board.board_grid)
         #self_play_instance = self_play.self_play(self.go_board, nn)
         machine_mv, win_prob = self.alphpago0.play_with_raw_nn(self.go_board)
-        #print(machine_mv, win_prob)
+        print(machine_mv, win_prob)
         if machine_mv == (-1, -1): # Machine passes
             if self.passed_once == True:
                 print("Game Over!")
