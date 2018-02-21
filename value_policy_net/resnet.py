@@ -88,7 +88,7 @@ class ResNet():
 
         A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
-        for i in range(5):
+        for i in range(2):
             A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
 
         #Policy head

@@ -8,7 +8,7 @@ import os
 class UniformPredictionNet():
     """ Fake class used for mcts and self playing testing
     """
-    def __init__(self, path_to_model = '/', go_board_dimension = 9):
+    def __init__(self, path_to_model = '/', go_board_dimension = 2):
         self.go_board_dimension = go_board_dimension
         self.path_to_model = path_to_model
         if not os.path.exists(self.path_to_model):
@@ -35,8 +35,8 @@ class UniformPredictionNet():
         else:
             prob = 0
 
-        p = []
+        p = {}
         for move in available_moves:
-            p.append((move, prob))
+            p[move] = prob
 
         return p, 0.2

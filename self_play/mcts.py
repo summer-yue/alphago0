@@ -142,7 +142,7 @@ class MCTS():
         #Make probbilities add up to zero
         sum_prob = sum(policy_with_noise)
         policy_with_noise = [p / sum_prob for p in policy_with_noise]
-        move_indices = [i for i in range(26)]
+        move_indices = [i for i in range(self.nn.go_board_dimension**2+1)]
   
         move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
 
