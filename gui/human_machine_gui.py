@@ -67,8 +67,6 @@ class Go:
             _, self.go_board = go_utils.make_move(board=self.go_board, move=machine_mv)
             print("Machine thinks the winning probability is:", win_prob)
 
-        #self.go_board = self_play_instance.current_board
-
     def on_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False

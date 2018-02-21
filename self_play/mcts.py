@@ -37,9 +37,12 @@ class MCTS():
         U = c_puct * edge.P * sqrt(sum_N_for_all_edges) / (1 + edge.N)
         return U
 
-    def select_edge(self, current_node):
+    def select_edge(self, current_node, type):
         """Select the edge attached to current_node that has the largest U+Q
         U is related to prior probability and explore factor and Q is action value
+        Args:
+            current_node: the node from which the edges will be selected
+            type: "max" or "min" indicating how the edge is selected
         Returns:
             edge: edge class instance with the largest U+Q, None if no edge exists
         """
@@ -58,9 +61,14 @@ class MCTS():
         current_node = self.root_node
 
         #traverse the tree till leaf node
-        selected_edge = 0
+        edge_type_max = True
+        selected_edge = True #Initial value != None, will change in loop
         while selected_edge != None:
-            selected_edge = self.select_edge(current_node)
+            if edge_type_max:
+                selected_edge = self.select_edge(current_node, "max")
+            else:
+                selected_edge = self.select_edge(current_node, "min")
+            edge_type_max = not edge_type_max
             if selected_edge != None:
                 current_node = selected_edge.to_node
         #Now current_node is a leaf node with no outgoing edges
