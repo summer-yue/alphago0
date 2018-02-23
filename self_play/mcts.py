@@ -14,7 +14,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, simluation_number = 100, random_seed = 2):
+    def __init__(self, board, nn, simluation_number = 500, random_seed = 2):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)
@@ -123,7 +123,7 @@ class MCTS():
         for i in range(self.simluation_number_remaining):
             self.run_one_simluation()
 
-        np.random.seed(seed=self.random_seed)
+        #np.random.seed(seed=self.random_seed)
         #Pick the most explored move for root node with randomization
         root_edges = self.root_node.edges
     
@@ -132,9 +132,15 @@ class MCTS():
         for edge in root_edges:
             (r, c) = edge.move
             if (r == -1) and (c == -1): #Pass
-                policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = (edge.N * 1.0 / sum_N)**2
+                if len(self.root_node.go_board.game_history) > 5:
+                    policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = (edge.N * 1.0 / sum_N)**3
+                else:
+                    policy[self.nn.go_board_dimension*self.nn.go_board_dimension] = (edge.N * 1.0 / sum_N)
             else:
-                policy[r*self.nn.go_board_dimension+c] = (edge.N * 1.0 / sum_N)**2 #Temparature = 0.5 intermediate amount of exploration
+                if len(self.root_node.go_board.game_history) > 5:
+                    policy[r*self.nn.go_board_dimension+c] = (edge.N * 1.0 / sum_N)**3 #Temparature = 0.33 low amount of exploration
+                else:
+                    policy[r*self.nn.go_board_dimension+c] = (edge.N * 1.0 / sum_N) # t = 1, high exploration
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
         policy_with_noise = 0.75 * policy

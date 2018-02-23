@@ -29,7 +29,7 @@ class AlphaGoZero():
         Returns:
             Nothing, but model_path/game_1 has the model trained
         """
-        BATCH_SIZE = 250
+        BATCH_SIZE = 40
         BLACK = 1 # black goes first
         batch_training_sample_size = 0
         batch_training_boards = np.empty(0)
@@ -60,13 +60,20 @@ class AlphaGoZero():
                     else:
                         batch_training_labels_v = np.append(batch_training_labels_v, training_labels_v, axis=0)
                 elif batch_training_sample_size > 0:
-                    model_path = self.model_path + '/batch_' + str(i)
-                    self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                    if i%10 == 0:
+                        model_path = self.model_path + '/batch_' + str(i)
+                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                    else:
+                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v)
                     batch_training_boards = training_boards
                     batch_training_labels_p = training_labels_p
                     batch_training_labels_v = training_labels_v
                 else:
-                    model_path = self.model_path + '/batch_' + str(i)
+                    if i%10 == 0:
+                        model_path = self.model_path + '/batch_' + str(i)
+                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                    else:
+                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v)
                     self.nn.train(training_boards, training_labels_p, training_labels_v, model_path)
                
             #Train the rest

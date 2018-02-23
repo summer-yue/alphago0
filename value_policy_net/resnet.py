@@ -66,7 +66,7 @@ class ResNet():
         predicted_right_count_neg_one = tf.cast(predicted_right_count_neg_one, tf.int32)
         predicted_right_count_neg_one = tf.multiply(elements_neg1, predicted_right_count_neg_one)
         predicted_right_count_neg_one = tf.reduce_sum(predicted_right_count_neg_one)
-        
+
         self.accuracy = (predicted_right_count_zero + predicted_right_count_one + predicted_right_count_neg_one)/tf.size(elements_0)
 
     def calc_loss(self):
@@ -76,7 +76,7 @@ class ResNet():
         """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
-        self.loss = value_loss
+        self.loss = value_loss + policy_loss
 
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:

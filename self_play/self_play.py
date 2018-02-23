@@ -66,11 +66,11 @@ class self_play():
                 passed_once = False
 
         winner, _ = go_utils_terminal.evaluate_winner(self.current_board.board_grid)
-        print("len(self.history_boards)", len(self.history_boards))
+        #print("len(self.history_boards)", len(self.history_boards))
         new_training_labels_v = np.array([[winner]]*len(self.history_boards))
 
         print("a game is finished and winner is:", winner)
-        print(self.policies)
-        print(new_training_labels_v)
+        # print(self.policies)
+        # print(new_training_labels_v)
         return np.array([history_board for history_board in self.history_boards]), self.policies, new_training_labels_v
 
