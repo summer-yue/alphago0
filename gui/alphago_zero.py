@@ -31,7 +31,7 @@ class AlphaGoZero():
             Nothing, but model_path/game_1 has the model trained
         """
         BATCH_SIZE = 100
-        BUCKET_SIZE = 1000 # bucket size used in experience replay
+        BUCKET_SIZE = 500 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -51,6 +51,7 @@ class AlphaGoZero():
                 ts = mcts.MCTS(board, self.nn)
                 play = self_play.self_play(board, self.nn)
                 training_boards, training_labels_p, training_labels_v = play.play_till_finish()
+                #print("training_labels_p:", training_labels_p.shape)
             
                 # Fill the bucket with current game's boards, around 20
                 if len(bucket_training_boards) == 0:
@@ -61,27 +62,29 @@ class AlphaGoZero():
                     bucket_training_labels_v = training_labels_v
                 bucket_training_boards = np.append(bucket_training_boards, training_boards, axis=0)
                 bucket_training_labels_p = np.append(bucket_training_labels_p, training_labels_p, axis=0)
+                #print("bucket_training_labels_p:", bucket_training_labels_p.shape)
                 bucket_training_labels_v = np.append(bucket_training_labels_v, training_labels_v, axis=0)
 
                 # Remove from the front if bucket size exceeds the specified bucket size
                 if len(bucket_training_labels_v) > BUCKET_SIZE:
                     deleted_indices = [i for i in range(len(bucket_training_labels_v) - BUCKET_SIZE)]
-                    bucket_training_boards = np.delete(bucket_training_boards, deleted_indices)
-                    bucket_training_labels_p = np.delete(bucket_training_labels_p, deleted_indices)
-                    bucket_training_labels_v = np.delete(bucket_training_labels_v, deleted_indices)
-
+                    bucket_training_boards = np.delete(bucket_training_boards, deleted_indices, axis=0)
+                    bucket_training_labels_p = np.delete(bucket_training_labels_p, deleted_indices, axis=0)
+                    bucket_training_labels_v = np.delete(bucket_training_labels_v, deleted_indices, axis=0)
+                    #print("bucket_training_labels_p:", bucket_training_labels_p.shape)
                     # Take BATCH_SIZE number of random elements from the bucket and train
                     BUCKET_INDICES = [i for i in range(BUCKET_SIZE)]
                     batch_indices = np.random.choice(BUCKET_INDICES, BATCH_SIZE, replace=False)
                     batch_training_boards = np.take(bucket_training_boards, batch_indices, axis=0)
                     batch_training_labels_p = np.take(bucket_training_labels_p, batch_indices, axis=0)
+                    #print("batch_training_labels_p:", batch_training_labels_p.shape)
                     batch_training_labels_v = np.take(bucket_training_labels_v, batch_indices, axis=0)
                     batch_num += 1
                     if batch_num%10 == 0: #Save every 10 batches
                         model_path = self.model_path + '/batch_' + str(batch_num)
                         self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     else:
-                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
+                        self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v)
 
     def play_with_raw_nn(self, board):
         """Play a move with the raw res net
