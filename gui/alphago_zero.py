@@ -2,8 +2,10 @@ from self_play import self_play
 from go import go_board
 from value_policy_net import resnet
 from self_play import mcts
+from go import go_utils
 from pyprind import prog_bar
 import numpy as np
+import operator
 
 import tensorflow as tf
 
@@ -94,14 +96,21 @@ class AlphaGoZero():
             next_move: (row, col) indicating where the neural net would place the stone
             winning_prob: probability of winning by playing this move acording to out neural net
         """
-        p, winning_prob = self.nn.predict(board)
-        move_index = np.argmax(p)
-        if (move_index == board.board_dimension*board.board_dimension):
-            (r, c) = (-1, -1)
-        else:
-            r = int(move_index / board.board_dimension)
-            c = int(move_index % board.board_dimension)
-        next_move = (r, c)
+        potential_moves_policy, winning_prob = self.nn.predict(board)
+
+        #print("policy is:", potential_moves_policy)
+        found_move = False
+        while not found_move:
+            board_copy = board.copy()
+            next_move = max(potential_moves_policy.items(), key=operator.itemgetter(1))[0]
+            is_valid_move, new_board = go_utils.make_move(board_copy, next_move)
+
+            #Only makes the move when the move is valid.
+            if is_valid_move:
+                found_move = True
+            else:
+                potential_moves_policy.pop(next_move)
+
         return next_move, winning_prob
 
     def play_with_mcts(self, board):
