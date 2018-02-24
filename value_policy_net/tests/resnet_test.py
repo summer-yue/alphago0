@@ -13,7 +13,7 @@ class ResNetTest(unittest.TestCase):
     def test_train_resnet(self):
         with tf.Session().as_default():
             res = resnet.ResNet(go_board_dimension=5)
-            res.fake_train("../models")
+            res.fake_train("../models_fake")
 
     # def test_convert_to_onehot(self):
     #     with tf.Session().as_default():

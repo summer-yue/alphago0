@@ -201,13 +201,13 @@ class ResNet():
                    train_labels_p[start_slice_index:end_slice_index],
                    train_labels_v[start_slice_index:end_slice_index])
 
-    def fake_train(self, model_path, training_data_num = 500):
+    def fake_train(self, model_path, training_data_num = 1000, test_data_num = 50):
         """This function is used for testing the resNet independent of the mcts and self play code.
         The goal is to teach the resNet to count the number of black and white stones on a board.
         This code is used in test only.
         """
         batch_size = 500
-        epoch_num = 500
+        epoch_num = 100
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
         
         #split into batches
@@ -223,17 +223,19 @@ class ResNet():
                 
                 losses.append(batch_loss)
                 accuracies.append(batch_acc)
-                gradients.append(batch_gradient)
-                #print(batch_loss)
+              
             print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
             print("Accuracy for epoch {} is {}".format(epoch, np.mean(accuracies)))
-            #print("Gradient for epoch {} is {}".format(epoch, np.mean(gradients, axis=0)))
-            #print("Gradient for epoch {} is {}".format(epoch, gradients[0]))
-            
-        print("predicting for:" + str(fake_x[0:10]))
-        print("Expected labels:" + str(fake_yv[0:10]))
-        print("Predicted labels:")
-        print(self.sess.run([self.yv_, self.yv_logits], feed_dict={self.x: fake_x[0:10]}))
+
+        #Testing fake data
+        #Achieved 96% test accuracy for counting, using 1000 training data, 500 batch size and 100 epochs
+        print("Start testing")
+        test_fake_x, test_fake_yp, test_fake_yv = self.generate_fake_data(test_data_num)
+        test_loss, test_acc = self.sess.run(
+            [self.loss, self.accuracy],
+            feed_dict={self.x: test_fake_x, self.yp: test_fake_yp, self.yv:test_fake_yv}
+        )
+        print("For {} testing data points, test loss is {}, test accuracy is {}". format(test_data_num, np.mean(test_loss), test_acc))
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net

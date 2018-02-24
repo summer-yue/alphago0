@@ -31,6 +31,11 @@ class AlphaGoZero():
             training_game_number: number of self play games
         Returns:
             Nothing, but model_path/game_1 has the model trained
+        Notes:
+            Training 1000 games, total board number seen = 1000 * 20 = 20,000
+            After each game, 100 boards are sampled. Each board is used 5 times.
+            Equivalent to 20,000 data over 5 epochs, 100,000 boards seen
+            Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
         BATCH_SIZE = 100
         BUCKET_SIZE = 500 # bucket size used in experience replay
