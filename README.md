@@ -21,7 +21,7 @@ python gui/human_machine_gui.py
 A pop up GUI is going to show up. It will look like this. Click start to start playing.
 You will be player black who moves first. Click an intersection on the board to place a move. <br>
 <br>
-![Image](docs/images/gui_initial.png) | ![Image](docs/images/gui_middle.png)
+<img src="docs/images/gui_initial.png" width="325"/> <img src="docs/images/gui_middle.png" width="325"/> 
 
 ## Step 4. (Optional) If you want to train your own AI go player, this may take a few hours.
 ```
