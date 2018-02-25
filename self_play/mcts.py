@@ -26,9 +26,9 @@ class MCTS():
         self.simluation_number = simluation_number
         self.nn = nn
         self.utils = utils
-       
-        move_p_dist_root, _ = self.nn.predict(board)
-        self.root_node = Node(board, parent_edge = None, edges=[], action_value=0, move_p_dist=move_p_dist_root)
+        self.original_board = board.copy()
+
+        self.root_node = Node(board, parent_edge = None, edges=[], action_value=0, move_p_dist=None)
         self.random_seed = random_seed
 
     def calculate_U_for_edge(self, edge, c_puct):
@@ -37,7 +37,8 @@ class MCTS():
         U = c_puct * P(edge) * sqrt(sum of N of parent_node's all edges) / (1 + N(edge))
         Args:
             edge: the edge whose U we are calculating
-            c_puct: Exploration constant in the formula to calculate u
+            c_puct: Exploration constant in the formula to calculate u, a number that controls how fast exploration
+            converges to the best policy, where a higher value => less exploration
         Returns:
             U: the exploration value U for the edge calculted from the PUCT calculation
         """
@@ -57,11 +58,14 @@ class MCTS():
         """
         all_edges = current_node.edges
         selected_edge = None
-        largest_qu_val = 0
 
-        edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=0.5) for edge in all_edges}
-        if edge_to_qu_val != {}:
-            selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
+        if all_edges:
+            if type == 'max':
+                edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=0.2) for edge in all_edges}
+                selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
+            elif type == 'min':
+                edge_to_qu_val = {edge: edge.Q - self.calculate_U_for_edge(edge, c_puct=0.2) for edge in all_edges}
+                selected_edge = min(edge_to_qu_val, key=edge_to_qu_val.get)
         return selected_edge
 
     def run_one_simluation(self):
@@ -84,37 +88,44 @@ class MCTS():
                 current_node = selected_edge.to_node
         #Now current_node is a leaf node with no outgoing edges
 
-        #expand and evaluate
+        #expand and evaluate if the game is not over
         current_board = current_node.board
-        (move_p_dist, v) = current_node.move_p_dist, current_node.action_value
+        if not self.utils.is_game_finished(current_board):
+            (move_p_dist, v) = self.nn.predict(current_board)
+            # print("move_p_dist", move_p_dist)
+            # print("v", v)
+            current_node.action_value = v
+            current_node.move_p_dist = move_p_dist
 
-        for next_move in move_p_dist:
-            p = move_p_dist[next_move]
-            is_move_valid, new_board = self.utils.make_move(current_board, next_move)
-         
-            if is_move_valid: #expand the edge
-                new_edge = Edge(from_node=current_node, to_node=None, W=0, Q=0, N=0, P=p, move=next_move)
-                current_node.edges.append(new_edge)
+            for next_move in move_p_dist:
+                p = move_p_dist[next_move]
+                is_move_valid = self.utils.is_valid_move(current_board, next_move)
+             
+                if is_move_valid: #expand the edge is move is valid
+                    _, new_board = self.utils.make_move(current_board, next_move)
+                    new_edge = Edge(from_node=current_node, to_node=None, W=0, Q=0, N=0, P=p, move=next_move)
+                    current_node.edges.append(new_edge)
+                    next_node = Node(new_board, new_edge, edges=[], action_value=0, move_p_dist=None)
+                    new_edge.to_node = next_node
+        else: #Current board is an end game state
+            if self.root_node.board.player == 1:
+                current_node.action_value = self.utils.evaluate_winner(current_board.board_grid)
+            else:
+                current_node.action_value = -self.utils.evaluate_winner(current_board.board_grid)
 
-                move_p_dist_next_node, action_value_next_node = self.nn.predict(new_board)
-     
-                next_node = Node(new_board, new_edge, edges=[], action_value=action_value_next_node, move_p_dist=move_p_dist_next_node)
-                new_edge.to_node = next_node
+        #backup from leaf node that was just expanded (current_node) to root
+        while current_node.parent_edge != None: #Continue when it is not root node
+            current_node.parent_edge.N = current_node.parent_edge.N + 1
+            current_node.parent_edge.W = current_node.parent_edge.W + current_node.action_value
+            current_node.parent_edge.Q = current_node.parent_edge.W * 1.0 / current_node.parent_edge.N
+            current_node = current_node.parent_edge.from_node
 
-                #backup from leaf node next_node to root
-                while next_node.parent_edge != None: #Continue when it is not root node
-                    next_node.parent_edge.N = next_node.parent_edge.N + 1
-                    next_node.parent_edge.W = next_node.parent_edge.W + next_node.action_value
-                    next_node.parent_edge.Q = next_node.parent_edge.W * 1.0 / next_node.parent_edge.N
-                    next_node = next_node.parent_edge.from_node
-
-                    child_node_counter = 0
-                    next_node.action_value = 0
-                    for next_node_edge in next_node.edges:
-                        next_node.action_value += next_node_edge.to_node.action_value
-                        child_node_counter += 1
-                   
-                    next_node.action_value /= child_node_counter
+            child_node_counter = 0
+            current_node.action_value = 0
+            for current_node_edge in current_node.edges:
+                current_node.action_value += current_node_edge.to_node.action_value
+                child_node_counter += 1
+            current_node.action_value /= child_node_counter
 
     def run_all_simulations(self):
         """Run the specified number of simluations according to simluation_number
@@ -136,42 +147,64 @@ class MCTS():
         root_edges = self.root_node.edges
     
         policy = np.zeros(self.nn.board_dimension*self.nn.board_dimension+1)
-        sum_N = sum([edge.N for edge in root_edges])
+        sum_N = sum([edge.N**10 for edge in root_edges])
+
+        # print(self.root_node.board)
+        print([(edge.move, edge.N, edge.Q, self.calculate_U_for_edge(edge, c_puct=0.2)) for edge in root_edges])
+
         for edge in root_edges:
             (r, c) = edge.move
             if (r == -1) and (c == -1): #Pass
                 if len(self.root_node.board.game_history) > 5:
-                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)**3
+                    #TODO#policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)**3
+                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**10 * 1.0 / sum_N)
                 else:
-                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)
+                    #todo policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)
+                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**10* 1.0 / sum_N)
+
             else:
                 if len(self.root_node.board.game_history) > 5:
-                    policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N)**3 #Temparature = 0.33 low amount of exploration
+                    #policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N)**3 #Temparature = 0.33 low amount of exploration
+                    policy[r*self.nn.board_dimension+c] = (edge.N **10 * 1.0 / sum_N)
                 else:
-                    policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N) # t = 1, high exploration
+                    #policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N) # t = 1, high exploration
+                    policy[r*self.nn.board_dimension+c] = (edge.N **10 * 1.0 / sum_N)
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
+        original_policy = [p / sum(policy) for p in policy]
+
         policy_with_noise = 0.75 * policy
         sum_prob = sum(policy)
-        policy = [p / sum_prob for p in policy]
-        noise = 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
-        #Not adding noise to moves where p = 0
-        policy_with_noise = [ p + noise[i] if abs(p) > 1e-3 else p for (i, p) in enumerate(policy_with_noise)]
-        #Make probbilities add up to zero
-        sum_prob = sum(policy_with_noise)
-        policy_with_noise = [p / sum_prob for p in policy_with_noise]
-        move_indices = [i for i in range(self.nn.board_dimension**2+1)]
-  
-        move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
 
-        if move_index == self.nn.board_dimension**2:
+        if sum_prob > 1e-3: #If there is at least a move available
+            policy = [p / sum_prob for p in policy]
+            noise = 0.25 * np.random.dirichlet(0.3 * np.ones(len(policy)))
+            #Not adding noise to moves where p = 0
+            policy_with_noise = [ p + noise[i] if abs(p) > 1e-3 else p for (i, p) in enumerate(policy_with_noise)]
+            #Make probbilities add up to zero
+            sum_prob = sum(policy_with_noise)
+     
+            policy_with_noise = [p / sum_prob for p in policy_with_noise]
+            move_indices = [i for i in range(self.nn.board_dimension**2+1)]
+      
+            #TODO#move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
+            move_index = np.random.choice(move_indices, 1, p = original_policy)[0]
+
+            if move_index == self.nn.board_dimension**2:
+                move = (-1, -1)
+            else:
+                r = int(move_index / self.nn.board_dimension)
+                c = move_index % self.nn.board_dimension
+                move = (r, c)
+        else: #Pass is the default when no move is available
             move = (-1, -1)
-        else:
-            r = int(move_index / self.nn.board_dimension)
-            c = move_index % self.nn.board_dimension
-            move = (r, c)
-        valid_move, new_board = self.utils.make_move(self.root_node.board, move)
 
+        #print action values for edges
+
+        valid_move, new_board = self.utils.make_move(self.original_board, move)
+        # print("move in mcts is:", move)
+        # print("board:", self.original_board)
+        # print(valid_move)
         assert valid_move == True
 
         return new_board, move, policy

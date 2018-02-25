@@ -4,7 +4,6 @@ BLACK = 1
 WHITE = -1
 
 from game.game_utils import GameUtils
-from game.game_board import GameBoard
 
 class GoUtils(GameUtils):
     """The go specific utility class.
@@ -17,7 +16,7 @@ class GoUtils(GameUtils):
     def is_valid_move(self, board, move):
         """Check if a potential move for the go game is valid.
         Args:
-            board: current board as a game_board object
+            board: current board as a go_board object
             move: (r, c) tuple indicating the position of the considered move
         Returns:
             boolean variable indicating if the go move is valid.
@@ -157,7 +156,7 @@ class GoUtils(GameUtils):
         """Check if the go game is finished by looking at its game history
         The game is finished if the last two actions were both pass
         Args:
-            board: current board as a game_board object
+            board: current board as a go_board object
         Returns:
             Boolean variable indicating if the game is finished
         """

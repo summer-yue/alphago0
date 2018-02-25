@@ -40,4 +40,4 @@ class UniformPredictionNet():
         for move in available_moves:
             p[move] = prob
 
-        return p, 0.2
+        return p, 0
