@@ -42,11 +42,12 @@ class TicTacToeUtils(GameUtils):
             old config if board is not updated
         """
         if self.is_valid_move(board, move):
-            board_copy = board.copy()
             (r, c) = move
-            board_copy.board_grid[r][c] = board.player
+            board_copy = board.copy()
             board_copy.add_move_to_history(r, c)
             board_copy.flip_player()
+            if move != (-1, -1):  
+                board_copy.board_grid[r][c] = board.player
             return True, board_copy
         else:
             return False, board_copy
@@ -57,6 +58,7 @@ class TicTacToeUtils(GameUtils):
             board_grid: 2d array representation of the board
         Returns:
             player who won the game. 1: black or -1: white
+            Absolute difference in scores
         """
         # Evaluate score for each of the 8 lines (3 rows, 3 columns, 2 diagonals)
         black_wins = False
@@ -82,11 +84,11 @@ class TicTacToeUtils(GameUtils):
                 
         assert (black_wins and white_wins) == False
         if black_wins:
-            return 1
+            return 1, None
         elif white_wins:
-            return -1
+            return -1, None
         else:
-            return 0
+            return 0, None
 
     def is_game_finished(self, board):
         """Check if the tic tac toe game is finished by looking at its game history
@@ -105,7 +107,8 @@ class TicTacToeUtils(GameUtils):
         second_to_last_move = (r2, c2)
 
         double_passed = (last_move == (-1, -1) and second_to_last_move == (-1, -1))
-        someone_won = not self._almost_equal(self.evaluate_winner(board.board_grid), 0)
+        winner, _  = self.evaluate_winner(board.board_grid) 
+        someone_won = not self._almost_equal(winner, 0)
         return double_passed or someone_won
 
     def _evaluateLine(self, board_grid, r1, c1,r2, c2, r3, c3):
@@ -119,6 +122,7 @@ class TicTacToeUtils(GameUtils):
         if abs(board_grid[r1][c1] + board_grid[r2][c2] + board_grid[r3][c3] - 3) < 1e-3:
             return 1
         elif abs(board_grid[r1][c1] + board_grid[r2][c2] + board_grid[r3][c3] + 3) < 1e-3:
+            #print("white wins in ({},{}), ({},{}), ({},{})". format(r1, c1,r2, c2, r3, c3))
             return -1
         else:
             return 0

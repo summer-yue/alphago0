@@ -61,11 +61,17 @@ class MCTS():
 
         if all_edges:
             if type == 'max':
-                edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=0.2) for edge in all_edges}
-                selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
+                edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=2) for edge in all_edges}
+                #selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
+                max_val = edge_to_qu_val[max(edge_to_qu_val, key=edge_to_qu_val.get)]
+                sample_edges = [k for k,v in edge_to_qu_val.items() if abs(v - max_val) < 1e-3]
+                selected_edge = random.choice(sample_edges)
             elif type == 'min':
-                edge_to_qu_val = {edge: edge.Q - self.calculate_U_for_edge(edge, c_puct=0.2) for edge in all_edges}
-                selected_edge = min(edge_to_qu_val, key=edge_to_qu_val.get)
+                edge_to_qu_val = {edge: edge.Q - self.calculate_U_for_edge(edge, c_puct=2) for edge in all_edges}
+                min_val = edge_to_qu_val[min(edge_to_qu_val, key=edge_to_qu_val.get)]
+                sample_edges = [k for k,v in edge_to_qu_val.items() if abs(v - min_val) < 1e-3]
+                selected_edge = random.choice(sample_edges)
+                #selected_edge = min(edge_to_qu_val, key=edge_to_qu_val.get)
         return selected_edge
 
     def run_one_simluation(self):
@@ -88,12 +94,13 @@ class MCTS():
                 current_node = selected_edge.to_node
         #Now current_node is a leaf node with no outgoing edges
 
+        assert current_node.is_leaf()
+   
         #expand and evaluate if the game is not over
         current_board = current_node.board
         if not self.utils.is_game_finished(current_board):
             (move_p_dist, v) = self.nn.predict(current_board)
-            # print("move_p_dist", move_p_dist)
-            # print("v", v)
+           
             current_node.action_value = v
             current_node.move_p_dist = move_p_dist
 
@@ -103,21 +110,24 @@ class MCTS():
              
                 if is_move_valid: #expand the edge is move is valid
                     _, new_board = self.utils.make_move(current_board, next_move)
+
                     new_edge = Edge(from_node=current_node, to_node=None, W=0, Q=0, N=0, P=p, move=next_move)
                     current_node.edges.append(new_edge)
                     next_node = Node(new_board, new_edge, edges=[], action_value=0, move_p_dist=None)
                     new_edge.to_node = next_node
         else: #Current board is an end game state
             if self.root_node.board.player == 1:
-                current_node.action_value = self.utils.evaluate_winner(current_board.board_grid)
+                current_node.action_value, _ = self.utils.evaluate_winner(current_board.board_grid)
             else:
-                current_node.action_value = -self.utils.evaluate_winner(current_board.board_grid)
+                current_node.action_value, _ = self.utils.evaluate_winner(current_board.board_grid)
+                current_node.action_value = - current_node.action_value
 
         #backup from leaf node that was just expanded (current_node) to root
         while current_node.parent_edge != None: #Continue when it is not root node
             current_node.parent_edge.N = current_node.parent_edge.N + 1
             current_node.parent_edge.W = current_node.parent_edge.W + current_node.action_value
             current_node.parent_edge.Q = current_node.parent_edge.W * 1.0 / current_node.parent_edge.N
+            current_node.action_value = current_node.parent_edge.Q
             current_node = current_node.parent_edge.from_node
 
             child_node_counter = 0
@@ -148,9 +158,6 @@ class MCTS():
     
         policy = np.zeros(self.nn.board_dimension*self.nn.board_dimension+1)
         sum_N = sum([edge.N**10 for edge in root_edges])
-
-        # print(self.root_node.board)
-        print([(edge.move, edge.N, edge.Q, self.calculate_U_for_edge(edge, c_puct=0.2)) for edge in root_edges])
 
         for edge in root_edges:
             (r, c) = edge.move
@@ -199,12 +206,7 @@ class MCTS():
         else: #Pass is the default when no move is available
             move = (-1, -1)
 
-        #print action values for edges
-
-        valid_move, new_board = self.utils.make_move(self.original_board, move)
-        # print("move in mcts is:", move)
-        # print("board:", self.original_board)
-        # print(valid_move)
+        valid_move, new_board = self.utils.make_move(self.original_board, move)  
         assert valid_move == True
 
         return new_board, move, policy

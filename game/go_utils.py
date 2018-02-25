@@ -129,6 +129,7 @@ class GoUtils(GameUtils):
             board_grid: 2d array representation of the board
         Returns:
             player who won the game. 1: black or -1: white
+            Absolute difference in game score
         """
         new_board = GoUtils._remove_captured_stones(board_grid)
         black_score = 0

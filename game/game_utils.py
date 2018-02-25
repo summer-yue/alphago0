@@ -41,6 +41,7 @@ class GameUtils(ABC):
             board_grid: 2d array representation of the board
         Returns:
             player who won the game. 1: black or -1: white
+            Absolute difference in scores
         """
         pass
 

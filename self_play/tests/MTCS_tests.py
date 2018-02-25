@@ -89,11 +89,31 @@ class MCTSTest(unittest.TestCase):
         nn = UniformPredictionNet(board_dimension = 3)
 
         for i in range(10):
-            mcts_instance = MCTS(board, nn, utils, simluation_number = 10000, random_seed=2)
+            mcts_instance = MCTS(board, nn, utils, simluation_number = 100, random_seed=2)
             board, move, policy = mcts_instance.run_all_simulations()
             if utils.is_game_finished(board):
-                print("winner is: {}".format(utils.evaluate_winner(board.board_grid)))
+                print("winner is : {}".format(utils.evaluate_winner(board.board_grid)))
             print("move {} is {}".format(i, move))
+
+    def test_solve_tic_tac_toe_2(self):
+        """ Run one simulation on graph with just one root node
+        """
+        grid = [[1, 0, -1], [0, 0, 0], [1, 0, 0]]
+        history = [(1, 0, 0), (-1, 0, 2), (1, 2, 0)]
+
+        # X1O
+        # 111
+        # X11
+
+        board = TicTacToeBoard(player=-1, board_grid = grid, game_history = history)
+        utils = TicTacToeUtils() 
+        nn = UniformPredictionNet(board_dimension = 3)
+
+        mcts_instance = MCTS(board, nn, utils, simluation_number = 1000, random_seed=2)
+        board, move, policy = mcts_instance.run_all_simulations()
+        self.assertEqual(move, (1, 0))
+        
+        print("board afer move is {} is with policy {}".format(board, policy))
 
 if __name__ == '__main__':
     unittest.main()
