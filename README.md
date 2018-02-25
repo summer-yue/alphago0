@@ -1,13 +1,13 @@
 # AlphaGo Zero Clone in Tensorflow (In Progress)
-An open-sourced version of the AlphaGo Zero Algorithms in Python and Tensorflow. Due to our computation resources constraint, we reduced the board size to 5x5. This can be modified with the board_dimension parameter, for those interested who have more computational resources. We stick to all the Go rules, except for Komi, which would give white player an unfair advantage for our smaller (5x5) go board. The original AlphaGo Zero paper can be found [here](https://www.nature.com/articles/nature24270.pdf) Python 3 is required to run the code.
+An open-sourced version of the AlphaGo Zero Algorithms in Python and Tensorflow. The original AlphaGo Zero by DeepMind was trained with 64 GPU workers and 19 CPU parameter servers. Due to our computation resource constraints, we reduced the go board size to 5x5. This can be modified with the board_dimension parameter, for those interested who have more computational resources. We stick to all the Go rules, except for Komi, which would give white player an unfair advantage for our smaller (5x5) go board. <br>
+The original AlphaGo Zero paper can be found [here](https://www.nature.com/articles/nature24270.pdf) Python 3 is required to run the code. We used the Tic Tac Toe game to test our MCTS algorithms and "Counting Stones" to test our residual network.
 
 # Components
-Residual Net <br />
+Residual Network <br />
 Self Play <br />
-Monte Carlo Tree Search <br />
+Monte Carlo Tree Search Simulations<br />
 GUI implemented in PyGame <br />
 
-# Instruction
 ## Step 1. Clone the repository, cd into the folder from terminal.
 ## Step 2. Install all packages required locally. Make sure you have pip installed.
 ```
@@ -18,7 +18,7 @@ pip install -e .
 python gui/human_machine_gui.py
 ``` 
 A pop up GUI is going to show up. It will look like this. Click start to start playing.
-You will be player black who moves first. Click an intersection on the board to place a move.
+You will be player black who moves first. Click an intersection on the board to place a move. <br>
 ![Image](docs/images/gui_initial.png)
 ## Step 4. (Optional) If you want to train your own AI go player, this may take a few hours.
 ```
