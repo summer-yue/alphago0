@@ -2,23 +2,23 @@
 # nn.predict() always returns uniform distribution for available moves
 # nn.predict() returns the value 1=self cross corner, -1 opponent cross corner and 0 otherwise
 # that is compatibile with the go rules
-from go import go_utils
 import os
+
+from game.go_utils import GoUtils
 
 class GoBoard2Heuristics():
     """ Fake class used for mcts and self playing testing
     """
-    def __init__(self, path_to_model = '/', go_board_dimension = 2):
-        self.go_board_dimension = go_board_dimension
+    def __init__(self, path_to_model = '/', board_dimension = 2):
+        self.board_dimension = board_dimension
         self.path_to_model = path_to_model
-        if not os.path.exists(self.path_to_model):
-            os.makedirs(self.path_to_model)
-
+        self.utils = GoUtils()
+   
     def count_stones(self, board_grid):
         count = 0
         value_sum = 0
-        for r in range(self.go_board_dimension):
-            for c in range(self.go_board_dimension):
+        for r in range(self.board_dimension):
+            for c in range(self.board_dimension):
                 if abs(board_grid[r][c]) > 1e-3:
                     count += 1
                     value_sum += board_grid[r][c]
@@ -64,10 +64,10 @@ class GoBoard2Heuristics():
  
         prob = 0
         available_moves = []
-        for r in range(self.go_board_dimension):
-            for c in range(self.go_board_dimension):
+        for r in range(self.board_dimension):
+            for c in range(self.board_dimension):
                 move = (r, c)
-                can_move, _ = go_utils.make_move(board, move)
+                can_move, _ = self.utils.make_move(board, move)
                 if can_move:
                     available_moves.append(move)
         available_moves.append((-1, -1))

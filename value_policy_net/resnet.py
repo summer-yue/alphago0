@@ -3,26 +3,26 @@ import numpy as np
 import os
 import random
 
-from go import go_board
+from game.game_board import GameBoard
 
 class ResNet():
     """Go algorithm without human knowledge
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, go_board_dimension = 5, model_path=None, restored=False):
+    def __init__(self, board_dimension = 5, model_path=None, restored=False):
         """Initialize a supervised learning res net model
         Args:
-            go_board_dimension: dimension for the go board to learn. A regular go board is 19*19
+            board_dimension: dimension for the go board to learn. A regular go board is 19*19
                 the default is 5*5 so it's convenient to train and run tests on.
             model_path: path to the model to be restored from or save to
             restored: boolean indicating if we want to restore a saved model
         """
-        self.go_board_dimension = go_board_dimension
+        self.board_dimension = board_dimension
 
         #Define the tensors that compose the graph
-        self.x = tf.placeholder(tf.float32, [None, self.go_board_dimension, self.go_board_dimension, 3], name="input")
-        self.yp = tf.placeholder(tf.float32, [None,  self.go_board_dimension*self.go_board_dimension + 1], name="labels_p")
+        self.x = tf.placeholder(tf.float32, [None, self.board_dimension, self.board_dimension, 3], name="input")
+        self.yp = tf.placeholder(tf.float32, [None,  self.board_dimension*self.board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
 
@@ -139,7 +139,7 @@ class ResNet():
         #Policy head
         ph1 = self.build_head_conv_layer(A, "policy_head", filter=2)
         ph1 = tf.contrib.layers.flatten(ph1)
-        p_logits = tf.contrib.layers.fully_connected(ph1, self.go_board_dimension*self.go_board_dimension+1, activation_fn=None)
+        p_logits = tf.contrib.layers.fully_connected(ph1, self.board_dimension*self.board_dimension+1, activation_fn=None)
 
         #Value head
         vh1 = self.build_head_conv_layer(A, "value_head", filter=1)
@@ -255,20 +255,20 @@ class ResNet():
         v = self.sess.run(self.yv_, feed_dict={self.x: [input_to_nn]})
 
         p = p[0]
-        p_dist[(-1, -1)] = p[self.go_board_dimension**2]
-        for r in range(self.go_board_dimension):
-            for c in range(self.go_board_dimension):
-                p_dist[(r, c)] = p[r * self.go_board_dimension + c]
+        p_dist[(-1, -1)] = p[self.board_dimension**2]
+        for r in range(self.board_dimension):
+            for c in range(self.board_dimension):
+                p_dist[(r, c)] = p[r * self.board_dimension + c]
         
         return p_dist, v
 
     def convert_to_resnet_input(self, original_board):
-        converted_grid = np.array(self.convert_to_one_hot_go_boards(original_board.board_grid))   
-        player_layer = np.ones((self.go_board_dimension , self.go_board_dimension , 1)) * original_board.player
+        converted_grid = np.array(self.convert_to_one_hot_boards(original_board.board_grid))   
+        player_layer = np.ones((self.board_dimension , self.board_dimension , 1)) * original_board.player
         append_result = np.append(converted_grid, player_layer, axis = 2)
         return append_result
 
-    def convert_to_one_hot_go_boards(self, original_board_grid):
+    def convert_to_one_hot_boards(self, original_board_grid):
         """Convert the format of the go board from a dim by dim 2d array to a dim by dim by 3 3d array.
         This is used before feed the boards into the neural net.
         Args:
@@ -303,7 +303,7 @@ class ResNet():
             [a size 26 one hot arrayindicating the count the total number stones, layer indicating current player(1) or opponent(-1) has more stones,
                 return 1 if they have the equal number of stones]
         """
-        go_board_dimension = self.go_board_dimension
+        board_dimension = self.board_dimension
         Xs = []
         total_stone_count_vectors = []
         player_with_more_stones_all = [] #1 if current player has more stones, -1 otherwise
@@ -314,18 +314,18 @@ class ResNet():
             white_stone_count = 0
 
             player = random.choice([-1, 1])
-            board_grid = [[random.choice(options) for c in range(go_board_dimension)] for r in range(go_board_dimension)]
-            for r in range(go_board_dimension):
-                for c in range(go_board_dimension):
+            board_grid = [[random.choice(options) for c in range(board_dimension)] for r in range(board_dimension)]
+            for r in range(board_dimension):
+                for c in range(board_dimension):
                     if board_grid[r][c] == -1:
                         white_stone_count += 1
                     elif board_grid[r][c] == 1:
                         black_stone_count += 1
-            board = go_board.go_board(go_board_dimension, player, board_grid)
+            board = GameBoard(board_dimension, player, board_grid)
             Xs.append(self.convert_to_resnet_input(board))
 
             total_stone_count = black_stone_count + white_stone_count
-            total_stone_count_vector = [0]*(go_board_dimension*go_board_dimension+1)
+            total_stone_count_vector = [0]*(board_dimension*board_dimension+1)
             total_stone_count_vector[total_stone_count] = 1
 
             if player == 1:

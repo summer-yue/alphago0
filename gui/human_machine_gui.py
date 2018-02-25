@@ -1,11 +1,11 @@
 import pygame
-from go import go_board as gb
-from go import go_utils
-from go import go_utils_terminal
-from value_policy_net.tests import uniform_prediction_net
-from self_play import self_play
-from gui import alphago_zero
+
 from pygame.locals import *
+
+from game.go_board import GoBoard
+from game.go_utils import GoUtils
+from gui.alphago_zero import AlphaGoZero
+#from self_play.self_play import SelfPlay
 
 # Assume human is black and machine is white
 
@@ -32,16 +32,16 @@ BOARD = (WIDTH + MARGIN) * (BOARD_DIM - 1) + MARGIN # Actual width for the board
 GAME_WIDTH = BOARD + PADDING * 2
 GAME_HIGHT = GAME_WIDTH + 100
 
-nn = uniform_prediction_net.UniformPredictionNet()
-
 class Go:
     def __init__(self):
-        self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
+        self.go_board = GoBoard(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
         pygame.init()
         pygame.font.init()
         self._display_surf = pygame.display.set_mode((GAME_WIDTH,GAME_HIGHT), pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         pygame.display.set_caption('Go')
+
+        self.utils = GoUtils()
 
         self._running = True
         self._playing = False
@@ -50,12 +50,12 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
-        self.alphpago0 = alphago_zero.AlphaGoZero(model_path="../models/batch_250", restored=True)
+        self.alphpago0 = AlphaGoZero(model_path="../models/batch_370", restored=True)
 
     def machine_responds(self):
         #print("machine responds")
         print(self.go_board.board_grid)
-        #self_play_instance = self_play.self_play(self.go_board, nn)
+        #self_play_instance = SelfPlay(self.go_board, nn)
         machine_mv, win_prob = self.alphpago0.play_with_raw_nn(self.go_board)
         print(machine_mv, win_prob)
         if machine_mv == (-1, -1): # Machine passes
@@ -63,11 +63,11 @@ class Go:
                 print("Game Over!")
                 self.game_over = True
             else:
-                _, self.go_board = go_utils.make_move(board=self.go_board, move=machine_mv)
+                _, self.go_board = self.utils.make_move(board=self.go_board, move=machine_mv)
                 print("machine passes")
         else:
             self.passed_once = False
-            _, self.go_board = go_utils.make_move(board=self.go_board, move=machine_mv)
+            _, self.go_board = self.utils.make_move(board=self.go_board, move=machine_mv)
             print("Machine thinks the winning probability is:", win_prob)
 
     def on_event(self, event):
@@ -87,7 +87,7 @@ class Go:
                     self.go_board.flip_player()
             elif self.mouse_in_pass_button(pos) and self._playing:
                 self.pass_button_clicked = False
-                _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
+                _, self.go_board = self.utils.make_move(board=self.go_board, move=PASS)
                 if not self.passed_once:
                     self.passed_once = True
                     self.on_render()
@@ -108,7 +108,7 @@ class Go:
                 r = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
-                    _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    _, self.go_board = self.utils.make_move(board=self.go_board, move=(r, c))
                     self.passed_once = False
                     self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
@@ -145,7 +145,7 @@ class Go:
     def start(self):
         self._playing = True
         self.lastPosition = [-1,-1]
-        self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
+        self.go_board = GoBoard(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
         self._win = False
 
     def surrender(self):
@@ -273,14 +273,14 @@ class Go:
                               (MARGIN + WIDTH)),1)
 
     def print_winner(self):
-        winner, winning_by_points = go_utils_terminal.evaluate_winner(self.go_board.board_grid)
+        winner, winning_by_points = self.utils.evaluate_winner(self.go_board.board_grid)
         if winner == PLAYER_BLACK:
             print ("Black wins by " + str(winning_by_points))
         else:
             print ("White wins by " + str(winning_by_points))
 
     def retrieve_winner(self):
-        return go_utils_terminal.evaluate_winner(self.go_board.board_grid)
+        return self.utils.evaluate_winner(self.go_board.board_grid)
 
 if __name__ == "__main__" :
     go = Go()

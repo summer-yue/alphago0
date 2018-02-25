@@ -1,8 +1,9 @@
 import pygame
-from go import go_board as gb
-from go import go_utils
-from go import go_utils_terminal
+
 from pygame.locals import *
+
+from game.go_board import GoBoard
+from game.go_utils import GoUtils
 
 BOARD_DIM = 5 # Define an x by x board
 
@@ -29,13 +30,14 @@ GAME_HIGHT = GAME_WIDTH + 100
 
 class Go:
     def __init__(self):
-        self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
+        self.go_board = GoBoard(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
         pygame.init()
         pygame.font.init()
         self._display_surf = pygame.display.set_mode((GAME_WIDTH,GAME_HIGHT), pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         pygame.display.set_caption('Go')
 
+        self.utils = GoUtils()
         self._running = True
         self._playing = False
         self._win = False
@@ -61,7 +63,7 @@ class Go:
                     self.go_board.flip_player()
             elif self._playing and self.mouse_in_pass_button(pos):
                 self.pass_button_clicked = False
-                _, self.go_board = go_utils.make_move(board=self.go_board, move=PASS)
+                _, self.go_board = self.utils.make_move(board=self.go_board, move=PASS)
                 if not self.passed_once:
                     self.passed_once = True
                 else:
@@ -76,7 +78,7 @@ class Go:
                 r = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
-                    _, self.go_board = go_utils.make_move(board=self.go_board, move=(r, c))
+                    _, self.go_board = self.utils.make_move(board=self.go_board, move=(r, c))
                     self.passed_once = False
                     self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
@@ -106,7 +108,7 @@ class Go:
     def start(self):
         self._playing = True
         self.lastPosition = [-1,-1]
-        self.go_board = gb.go_board(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
+        self.go_board = GoBoard(board_dimension=BOARD_DIM, player=PLAYER_BLACK)
         self._win = False
 
     def surrender(self):
@@ -233,14 +235,14 @@ class Go:
                               (MARGIN + WIDTH)),1)
 
     def print_winner(self):
-        winner, winning_by_points = go_utils_terminal.evaluate_winner(self.go_board.board_grid)
+        winner, winning_by_points = self.utils.evaluate_winner(self.go_board.board_grid)
         if winner == PLAYER_BLACK:
             print ("Black wins by " + str(winning_by_points))
         else:
             print ("White wins by " + str(winning_by_points))
 
     def retrieve_winner(self):
-        return go_utils_terminal.evaluate_winner(self.go_board.board_grid)
+        return self.utils.evaluate_winner(self.go_board.board_grid)
 
 if __name__ == "__main__" :
     go = Go()

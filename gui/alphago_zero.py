@@ -1,13 +1,14 @@
-from self_play import self_play
-from go import go_board
-from value_policy_net import resnet
-from self_play import mcts
-from go import go_utils
-from pyprind import prog_bar
 import numpy as np
 import operator
-
 import tensorflow as tf
+
+from pyprind import prog_bar
+
+from game.go_board import GoBoard
+from game.go_utils import GoUtils
+from self_play.mcts import MCTS
+from self_play.self_play import SelfPlay
+from value_policy_net.resnet import ResNet
 
 BLACK = 1
 WHITE = -1
@@ -20,9 +21,10 @@ class AlphaGoZero():
             restored: boolean indicating if we want to restore a saved model
         """
         self.model_path = model_path
+        self.utils = GoUtils()
         self.sess = tf.Session()
         with self.sess.as_default():
-            self.nn = resnet.ResNet(go_board_dimension = 5, model_path = model_path, restored=restored)
+            self.nn = ResNet(board_dimension = 5, model_path = model_path, restored=restored)
 
     def train_nn(self, training_game_number = 1000):
         """Training the resnet by self play using MCTS
@@ -54,9 +56,9 @@ class AlphaGoZero():
         with self.sess.as_default():
             for game_num in prog_bar(range(training_game_number)):
                 print("training game:", game_num+1)
-                board = go_board.go_board(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
-                ts = mcts.MCTS(board, self.nn)
-                play = self_play.self_play(board, self.nn)
+                board = GoBoard(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
+                ts = MCTS(board, self.nn)
+                play = SelfPlay(board, self.nn)
                 training_boards, training_labels_p, training_labels_v = play.play_till_finish()
                 #print("training_labels_p:", training_labels_p.shape)
             
@@ -108,7 +110,7 @@ class AlphaGoZero():
         while not found_move:
             board_copy = board.copy()
             next_move = max(potential_moves_policy.items(), key=operator.itemgetter(1))[0]
-            is_valid_move, new_board = go_utils.make_move(board_copy, next_move)
+            is_valid_move, new_board = self.utils.make_move(board_copy, next_move)
 
             #Only makes the move when the move is valid.
             if is_valid_move:
