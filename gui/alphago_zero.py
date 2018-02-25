@@ -6,7 +6,7 @@ from pyprind import prog_bar
 
 from game.go_board import GoBoard
 from game.go_utils import GoUtils
-from self_play.mcts import MCTS
+
 from self_play.self_play import SelfPlay
 from value_policy_net.resnet import ResNet
 
@@ -26,7 +26,7 @@ class AlphaGoZero():
         with self.sess.as_default():
             self.nn = ResNet(board_dimension = 5, model_path = model_path, restored=restored)
 
-    def train_nn(self, training_game_number = 1000):
+    def train_nn(self, training_game_number, simulation_number):
         """Training the resnet by self play using MCTS
         With experience replay
         Args:
@@ -40,7 +40,7 @@ class AlphaGoZero():
             Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
         BATCH_SIZE = 100
-        BUCKET_SIZE = 500 # bucket size used in experience replay
+        BUCKET_SIZE = 1000 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -56,12 +56,11 @@ class AlphaGoZero():
         with self.sess.as_default():
             for game_num in prog_bar(range(training_game_number)):
                 print("training game:", game_num+1)
-                board = GoBoard(self.nn.go_board_dimension, BLACK, board_grid=None, game_history=None)
-                ts = MCTS(board, self.nn)
-                play = SelfPlay(board, self.nn)
+                board = GoBoard(self.nn.board_dimension, BLACK, board_grid=None, game_history=None)
+                
+                play = SelfPlay(board, self.nn, self.utils, simluation_number=simulation_number)
                 training_boards, training_labels_p, training_labels_v = play.play_till_finish()
-                #print("training_labels_p:", training_labels_p.shape)
-            
+                
                 # Fill the bucket with current game's boards, around 20
                 if len(bucket_training_boards) == 0:
                     bucket_training_boards = training_boards
@@ -89,7 +88,7 @@ class AlphaGoZero():
                     #print("batch_training_labels_p:", batch_training_labels_p.shape)
                     batch_training_labels_v = np.take(bucket_training_labels_v, batch_indices, axis=0)
                     batch_num += 1
-                    if batch_num%10 == 0: #Save every 10 batches
+                    if batch_num%1 == 0: #Save every 10 batches
                         model_path = self.model_path + '/batch_' + str(batch_num)
                         self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     else:
@@ -131,5 +130,5 @@ class AlphaGoZero():
         
 if __name__ == '__main__':
     alphpago0 = AlphaGoZero(model_path="../models", restored=False)
-    alphpago0.train_nn()
+    alphpago0.train_nn(training_game_number=1000, simulation_number=300)
     

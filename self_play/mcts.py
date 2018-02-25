@@ -13,7 +13,7 @@ class MCTS():
     """Perform MCTS with a large number of simluations to determine the next move policy
     for a given board
     """
-    def __init__(self, board, nn, utils, simluation_number = 200, random_seed = None):
+    def __init__(self, board, nn, utils, simluation_number, random_seed = None):
         """Initialize the MCTS instance
         Args:
             simluation_number: number of simluations in MCTS before calculating a pi (next move policy)
@@ -61,13 +61,13 @@ class MCTS():
 
         if all_edges:
             if type == 'max':
-                edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=2) for edge in all_edges}
+                edge_to_qu_val = {edge: edge.Q + self.calculate_U_for_edge(edge, c_puct=0.5) for edge in all_edges}
                 #selected_edge = max(edge_to_qu_val, key=edge_to_qu_val.get)
                 max_val = edge_to_qu_val[max(edge_to_qu_val, key=edge_to_qu_val.get)]
                 sample_edges = [k for k,v in edge_to_qu_val.items() if abs(v - max_val) < 1e-3]
                 selected_edge = random.choice(sample_edges)
             elif type == 'min':
-                edge_to_qu_val = {edge: edge.Q - self.calculate_U_for_edge(edge, c_puct=2) for edge in all_edges}
+                edge_to_qu_val = {edge: edge.Q - self.calculate_U_for_edge(edge, c_puct=0.5) for edge in all_edges}
                 min_val = edge_to_qu_val[min(edge_to_qu_val, key=edge_to_qu_val.get)]
                 sample_edges = [k for k,v in edge_to_qu_val.items() if abs(v - min_val) < 1e-3]
                 selected_edge = random.choice(sample_edges)
@@ -137,10 +137,14 @@ class MCTS():
                 child_node_counter += 1
             current_node.action_value /= child_node_counter
 
-    def run_all_simulations(self):
+    def run_all_simulations(self, temp1, temp2, step_boundary):
         """Run the specified number of simluations according to simluation_number
         when initializing the object. Returns a policy pi for board's next move
         according to these simluations
+        Args:
+            temp1: exploration temparature before the step_boundary
+            temp2: exploration temparatre used after step_boundary
+            step_boundary: the number of moves where temperature changes (that divided explore more and explore less)
         Returns: 
             (new_board, move)
             move: the best move generated according to the MCTS simulations
@@ -157,29 +161,26 @@ class MCTS():
         root_edges = self.root_node.edges
     
         policy = np.zeros(self.nn.board_dimension*self.nn.board_dimension+1)
-        sum_N = sum([edge.N**10 for edge in root_edges])
+        if len(self.root_node.board.game_history) > step_boundary:
+            sum_N = sum([edge.N**(1/temp2) for edge in root_edges])
+        else:
+            sum_N = sum([edge.N**(1/temp1) for edge in root_edges])
 
         for edge in root_edges:
             (r, c) = edge.move
             if (r == -1) and (c == -1): #Pass
-                if len(self.root_node.board.game_history) > 5:
-                    #TODO#policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)**3
-                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**10 * 1.0 / sum_N)
+                if len(self.root_node.board.game_history) > step_boundary:
+                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**(1/temp2) * 1.0 / sum_N)
                 else:
-                    #todo policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N * 1.0 / sum_N)
-                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**10* 1.0 / sum_N)
+                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**(1/temp1) * 1.0 / sum_N)
 
             else:
-                if len(self.root_node.board.game_history) > 5:
-                    #policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N)**3 #Temparature = 0.33 low amount of exploration
-                    policy[r*self.nn.board_dimension+c] = (edge.N **10 * 1.0 / sum_N)
+                if len(self.root_node.board.game_history) > step_boundary:
+                    policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp2) * 1.0 / sum_N) #Temparature = 0.33 low amount of exploration
                 else:
-                    #policy[r*self.nn.board_dimension+c] = (edge.N * 1.0 / sum_N) # t = 1, high exploration
-                    policy[r*self.nn.board_dimension+c] = (edge.N **10 * 1.0 / sum_N)
+                    policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp1) * 1.0 / sum_N) # t = 0.5, relatively high exploration
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
-        original_policy = [p / sum(policy) for p in policy]
-
         policy_with_noise = 0.75 * policy
         sum_prob = sum(policy)
 
@@ -190,12 +191,9 @@ class MCTS():
             policy_with_noise = [ p + noise[i] if abs(p) > 1e-3 else p for (i, p) in enumerate(policy_with_noise)]
             #Make probbilities add up to zero
             sum_prob = sum(policy_with_noise)
-     
             policy_with_noise = [p / sum_prob for p in policy_with_noise]
             move_indices = [i for i in range(self.nn.board_dimension**2+1)]
-      
-            #TODO#move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
-            move_index = np.random.choice(move_indices, 1, p = original_policy)[0]
+            move_index = np.random.choice(move_indices, 1, p = policy_with_noise)[0]
 
             if move_index == self.nn.board_dimension**2:
                 move = (-1, -1)

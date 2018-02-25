@@ -6,12 +6,13 @@ class SelfPlay():
     """Algorithm plays against itself till the game ends and produce a set of (board, policy, result)
     Used as training data for the neural net.
     """
-    def __init__(self, starting_board, nn, utils):
+    def __init__(self, starting_board, nn, utils, simluation_number):
         """Initialize an instance of self play with a starting node
         Args:
             starting_board: a GameBoard instance representing the starting board
             nn: instance of current neural net model
             utils: GameUtils instance used during self play
+            simluation_number: number of MCTS simulations needed to play one move
         Fields:
             self.nn: instance of neural net model used for this iteration of self play
             self.current_node: the current node during self play
@@ -20,6 +21,7 @@ class SelfPlay():
         """
         self.utils = utils
         self.nn = nn
+        self.simluation_number = simluation_number
         self.current_board = starting_board
         self.policies = np.empty(0)
         self.history_boards = np.empty(0) #Records all the board config played in this self play session
@@ -31,8 +33,8 @@ class SelfPlay():
            Returns:
                 True if the player passed, False otherwise
         """
-        ts_instance = MCTS(self.current_board, self.nn, self.utils)
-        new_board, move, policy = ts_instance.run_all_simulations()
+        ts_instance = MCTS(self.current_board, self.nn, self.utils, self.simluation_number)
+        new_board, move, policy = ts_instance.run_all_simulations(temp1 = 0.2, temp2 = 0.1, step_boundary=2)
 
         print("move is:", move)
         if len(self.policies) == 0:
@@ -59,7 +61,6 @@ class SelfPlay():
         new_training_labels_v = np.array([[winner]]*len(self.history_boards))
 
         print("a game is finished and winner is:", winner)
-        # print(self.policies)
-        # print(new_training_labels_v)
+   
         return np.array([history_board for history_board in self.history_boards]), self.policies, new_training_labels_v
 
