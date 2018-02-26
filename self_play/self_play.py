@@ -54,9 +54,12 @@ class SelfPlay():
             self.policies: an array of result ready to be used as policy training labels
             new_training_labels_v: an array of result ready to be used as value training labels
         """
-        while not self.utils.is_game_finished(self.current_board):
+        move_num = 0
+        #Cut the game if we played for too long
+        while (not self.utils.is_game_finished(self.current_board)) and move_num <= self.current_board.board_dimension**2 * 2:
             self.play_one_move()
-       
+            move_num += 1
+
         winner, _ = self.utils.evaluate_winner(self.current_board.board_grid)
         new_training_labels_v = np.array([[winner]]*len(self.history_boards))
 

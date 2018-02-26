@@ -10,7 +10,7 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, board_dimension = 5, l2_beta=0.01, odel_path=None, restored=False):
+    def __init__(self, board_dimension = 5, l2_beta=0.01, model_path=None, restored=False):
         """Initialize a supervised learning res net model
         Args:
             board_dimension: dimension for the go board to learn. A regular go board is 19*19
