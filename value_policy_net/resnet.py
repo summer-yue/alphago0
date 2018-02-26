@@ -10,11 +10,12 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, board_dimension = 5, model_path=None, restored=False):
+    def __init__(self, board_dimension = 5, l2_beta=0.01, odel_path=None, restored=False):
         """Initialize a supervised learning res net model
         Args:
             board_dimension: dimension for the go board to learn. A regular go board is 19*19
                 the default is 5*5 so it's convenient to train and run tests on.
+            l2_beta: constant used for l2 regularization
             model_path: path to the model to be restored from or save to
             restored: boolean indicating if we want to restore a saved model
         """
@@ -26,7 +27,7 @@ class ResNet():
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
 
-        self.calc_loss()
+        self.calc_loss(l2_beta)
         self.gradient = tf.gradients(self.loss, self.x)
         self.calc_accuracy()
         #self.optimizer = tf.train.MomentumOptimizer(1e-4, 0.9)
@@ -69,19 +70,23 @@ class ResNet():
 
         self.accuracy = (predicted_right_count_zero + predicted_right_count_one + predicted_right_count_neg_one)/tf.size(elements_0)
 
-    def calc_loss(self):
+    def calc_loss(self, l2_beta):
         """Calculate the loss function for the policy-value network
+        Args:
+            l2_beta: beta constant used for l2 regularization
         Returns:
             The loss tensor
         """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
-        self.loss = value_loss + policy_loss
-
+        # L2 loss
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        self.loss = value_loss + policy_loss + l2_beta * sum(reg_losses)
+        
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
             Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
-            # Z = tf.layers.batch_normalization(Z)
+            Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A
 

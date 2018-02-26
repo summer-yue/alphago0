@@ -24,13 +24,14 @@ class AlphaGoZero():
         self.utils = GoUtils()
         self.sess = tf.Session()
         with self.sess.as_default():
-            self.nn = ResNet(board_dimension = 5, model_path = model_path, restored=restored)
+            self.nn = ResNet(board_dimension = 5, l2_beta=0.01, model_path = model_path, restored=restored)
 
     def train_nn(self, training_game_number, simulation_number):
         """Training the resnet by self play using MCTS
         With experience replay
         Args:
             training_game_number: number of self play games
+            simulation_number: number of simulations used in MCTS
         Returns:
             Nothing, but model_path/game_1 has the model trained
         Notes:
@@ -88,7 +89,7 @@ class AlphaGoZero():
                     #print("batch_training_labels_p:", batch_training_labels_p.shape)
                     batch_training_labels_v = np.take(bucket_training_labels_v, batch_indices, axis=0)
                     batch_num += 1
-                    if batch_num%1 == 0: #Save every 10 batches
+                    if batch_num%10 == 0: #Save every 10 batches
                         model_path = self.model_path + '/batch_' + str(batch_num)
                         self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     else:
@@ -104,7 +105,7 @@ class AlphaGoZero():
         """
         potential_moves_policy, winning_prob = self.nn.predict(board)
 
-        #print("policy is:", potential_moves_policy)
+        print("policy is:", potential_moves_policy)
         found_move = False
         while not found_move:
             board_copy = board.copy()
