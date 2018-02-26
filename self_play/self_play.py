@@ -65,5 +65,6 @@ class SelfPlay():
 
         print("a game is finished and winner is:", winner)
    
-        return np.array([history_board for history_board in self.history_boards]), self.policies, new_training_labels_v
+        boards_data = np.array([augment_board for history_board in self.history_boards for augment_board in history_board.generate_augmented_boards()])
+        return boards_data, self.policies, new_training_labels_v
 

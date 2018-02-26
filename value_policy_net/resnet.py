@@ -4,6 +4,7 @@ import os
 import random
 
 from game.game_board import GameBoard
+from game.go_board import GoBoard
 
 class ResNet():
     """Go algorithm without human knowledge
@@ -326,7 +327,7 @@ class ResNet():
                         white_stone_count += 1
                     elif board_grid[r][c] == 1:
                         black_stone_count += 1
-            board = GameBoard(board_dimension, player, board_grid)
+            board = GoBoard(board_dimension, player, board_grid)
             Xs.append(self.convert_to_resnet_input(board))
 
             total_stone_count = black_stone_count + white_stone_count

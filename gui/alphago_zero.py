@@ -41,7 +41,7 @@ class AlphaGoZero():
             Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
         BATCH_SIZE = 100
-        BUCKET_SIZE = 1000 # bucket size used in experience replay
+        BUCKET_SIZE = 4000 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -57,7 +57,7 @@ class AlphaGoZero():
         with self.sess.as_default():
             for game_num in prog_bar(range(training_game_number)):
                 print("training game:", game_num+1)
-                board = GoBoard(self.nn.board_dimension, BLACK, board_grid=None, game_history=None)
+                board = GoBoard(self.nn.board_dimension, BLACK, board_grid=[], game_history=None)
                 
                 play = SelfPlay(board, self.nn, self.utils, simluation_number=simulation_number)
                 training_boards, training_labels_p, training_labels_v = play.play_till_finish()

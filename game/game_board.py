@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 class GameBoard(ABC):
     """The general class for a grid based two player game board.
     """
-    def __init__(self, board_dimension, player, board_grid = None, game_history = None):
+    def __init__(self, board_dimension, player, board_grid = [], game_history = None):
         """Initialize a game board
         Args:
             board_dimension: the dimension of our game board
@@ -17,7 +17,7 @@ class GameBoard(ABC):
         """
         self.board_dimension = board_dimension
         self.player = player
-        if board_grid != None:
+        if len(board_grid) > 0:
             self.board_grid = board_grid
             self.game_history = game_history
             # TODO: check if game history matches the current board.
@@ -33,6 +33,18 @@ class GameBoard(ABC):
             self.player = -1
         else:
             self.player = 1
+
+    def generate_augmented_boards(self):
+        """augment the training data using the flipped version and rotated version of the board itself
+        """
+        for i in range(4):
+            # rotate counterclockwise
+            new_board_grid = np.rot90(self.board_grid, i + 1)
+            yield GameBoard(self.board_dimension, self.player, board_grid = new_board_grid, game_history = None)
+                  
+        # flip horizontally
+        new_board_grid = np.fliplr(self.board_grid)
+        yield GameBoard(self.board_dimension, self.player, board_grid = new_board_grid, game_history = None)
 
     def add_move_to_history(self, r, c):
         """Add move (r, c) to the game_history field of the class
