@@ -6,7 +6,7 @@ from pyprind import prog_bar
 
 from game.go_board import GoBoard
 from game.go_utils import GoUtils
-
+from self_play.mcts import MCTS
 from self_play.self_play import SelfPlay
 from value_policy_net.resnet import ResNet
 
@@ -120,14 +120,18 @@ class AlphaGoZero():
 
         return next_move, winning_prob
 
-    def play_with_mcts(self, board):
+    def play_with_mcts(self, board, simulation_number):
         """Play a move with the res net and another round of Monte Carlo Tree Search
         Args:
             board: current board including the current player and stone distribution
+            simulation_number: number of simluations during play
         Returns:
             next_move: (row, col) indicating where the neural net with MCTS would place the stone
         """
-        pass
+        mcts_play_instance = MCTS(board, self.nn, self.utils, simluation_number = simulation_number)
+        _, next_move, _ = mcts_play_instance.run_all_simulations(temp1 = 0.2, temp2 = 0.1, step_boundary=2)
+
+        return next_move
         
 if __name__ == '__main__':
     alphpago0 = AlphaGoZero(model_path="../models", restored=False)
