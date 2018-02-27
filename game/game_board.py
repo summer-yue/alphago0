@@ -38,6 +38,7 @@ class GameBoard(ABC):
     def generate_augmented_boards(self):
         """augment the training data using the flipped version and rotated version of the board itself
         """
+        #TODO: support history field
         for i in range(4):
             # rotate counterclockwise
             new_board_grid = np.rot90(self.board_grid, i + 1)
@@ -46,6 +47,13 @@ class GameBoard(ABC):
         # flip horizontally
         new_board_grid = np.fliplr(self.board_grid)
         yield GameBoard(self.board_dimension, self.player, board_grid = new_board_grid, game_history = None)
+
+    def reverse_board_config(self):
+        """Switch white and black stones and flip current player.
+        This is used for further data augmentation.
+        """
+        #TODO: support history field
+        return GameBoard(self.board_dimension, -self.player, board_grid = -self.board_grid, game_history = None)
 
     def add_move_to_history(self, r, c):
         """Add move (r, c) to the game_history field of the class
