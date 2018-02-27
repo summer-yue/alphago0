@@ -60,15 +60,23 @@ class SelfPlay():
             self.play_one_move()
             move_num += 1
 
-        winner, _ = self.utils.evaluate_winner(self.current_board.board_grid)
-        new_training_labels_v = np.repeat(np.array([[winner]]), 5*len(self.history_boards), axis=0)
-        new_training_labels_v = np.append(new_training_labels_v, np.repeat(np.array([[-winner]]), 5*len(self.history_boards), axis=0), axis=0)
-        new_training_labels_p = np.repeat(np.array(self.policies), 10, axis=0)
-
-        print("a game is finished and winner is:", winner)
    
         boards_data = np.array([augment_board for history_board in self.history_boards for augment_board in history_board.generate_augmented_boards()])
         reversed_boards_data = [b.reverse_board_config() for b in boards_data]
+
+        winner, _ = self.utils.evaluate_winner(self.current_board.board_grid)
+        #corresponding winner for each history board from current perspective
+        new_training_labels_v = np.array([[winner] if history_board.player == self.current_board.player else [-winner] \
+            for history_board in self.history_boards])
+        new_training_labels_v = np.repeat(new_training_labels_v, 5, axis=0)
+        new_training_labels_v = np.append(new_training_labels_v, -new_training_labels_v, axis=0)
+        new_training_labels_p = np.repeat(np.array(self.policies), 10, axis=0)
+
+        print("a game is finished and winner is:", winner)
+        # print("self play shape check")
+        # print(np.append(boards_data, reversed_boards_data).shape)
+        # print(new_training_labels_v.shape)
+        # print(new_training_labels_p.shape)
 
         return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
 
