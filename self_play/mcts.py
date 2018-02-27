@@ -207,4 +207,4 @@ class MCTS():
         valid_move, new_board = self.utils.make_move(self.original_board, move)  
         assert valid_move == True
 
-        return new_board, move, policy
+        return new_board, move, policy_with_noise

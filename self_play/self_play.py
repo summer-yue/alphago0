@@ -1,5 +1,5 @@
 import numpy as np
-
+np.set_printoptions(threshold=np.nan)
 from self_play.mcts import MCTS
 
 class SelfPlay():
@@ -59,7 +59,6 @@ class SelfPlay():
         while (not self.utils.is_game_finished(self.current_board)) and move_num <= self.current_board.board_dimension**2 * 2:
             self.play_one_move()
             move_num += 1
-
    
         boards_data = np.array([augment_board for history_board in self.history_boards for augment_board in history_board.generate_augmented_boards()])
         reversed_boards_data = [b.reverse_board_config() for b in boards_data]
@@ -70,13 +69,24 @@ class SelfPlay():
             for history_board in self.history_boards])
         new_training_labels_v = np.repeat(new_training_labels_v, 5, axis=0)
         new_training_labels_v = np.append(new_training_labels_v, -new_training_labels_v, axis=0)
-        new_training_labels_p = np.repeat(np.array(self.policies), 10, axis=0)
+        new_training_labels_p = np.repeat(np.array(self.policies), 5, axis=0)
+        new_training_labels_p = np.append(new_training_labels_p, new_training_labels_p, axis=0)
 
-        print("a game is finished and winner is:", winner)
-        # print("self play shape check")
-        # print(np.append(boards_data, reversed_boards_data).shape)
-        # print(new_training_labels_v.shape)
-        # print(new_training_labels_p.shape)
+        #print(self.policies)
+        #print()
+        #print(new_training_labels_p)
+        # print("current board is ", self.current_board)
+        # print("a game is finished and winner is:", winner)
+        # print()
+        # print("self play 10 boards")
+        # for board in np.append(boards_data, reversed_boards_data):
+        #     print(str(board))
+        # print()
+        # print("v labels")
+        # print(new_training_labels_v)
+        # print()
+        # print("p labels")
+        # print(new_training_labels_p)
 
         return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
 
