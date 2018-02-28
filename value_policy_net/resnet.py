@@ -11,7 +11,7 @@ class ResNet():
     Original paper from: https://www.nature.com/articles/nature24270.pdf
     Using a res net and capability amplification with Monte Carlo Tree Search
     """
-    def __init__(self, board_dimension = 5, l2_beta=0.01, model_path=None, restored=False):
+    def __init__(self, board_dimension = 5, l2_beta=0.0001, model_path=None, restored=False):
         """Initialize a supervised learning res net model
         Args:
             board_dimension: dimension for the go board to learn. A regular go board is 19*19
@@ -48,28 +48,31 @@ class ResNet():
         Returns:
             The accuracy tensor
         """
-        elements_0 = tf.equal(self.yv, 0)
-        elements_0 = tf.cast(elements_0, tf.int32)
-        predicted_right_count_zero = tf.less(tf.abs(self.yv - self.yv_), 0.3)
-        predicted_right_count_zero = tf.cast(predicted_right_count_zero, tf.int32)
-        predicted_right_count_zero = tf.multiply(elements_0, predicted_right_count_zero)
-        predicted_right_count_zero = tf.reduce_sum(predicted_right_count_zero)
+        # elements_0 = tf.equal(self.yv, 0)
+        # elements_0 = tf.cast(elements_0, tf.int32)
+        # predicted_right_count_zero = tf.less(tf.abs(self.yv - self.yv_), 0.3)
+        # predicted_right_count_zero = tf.cast(predicted_right_count_zero, tf.int32)
+        # predicted_right_count_zero = tf.multiply(elements_0, predicted_right_count_zero)
+        # predicted_right_count_zero = tf.reduce_sum(predicted_right_count_zero)
 
-        elements_1 = tf.equal(self.yv, 1)
-        elements_1 = tf.cast(elements_1, tf.int32)
-        predicted_right_count_one = tf.less(tf.subtract(self.yv, self.yv_), 0.7)
-        predicted_right_count_one = tf.cast(predicted_right_count_one, tf.int32)
-        predicted_right_count_one = tf.multiply(elements_1, predicted_right_count_one)
-        predicted_right_count_one = tf.reduce_sum(predicted_right_count_one)
+        # elements_1 = tf.equal(self.yv, 1)
+        # elements_1 = tf.cast(elements_1, tf.int32)
+        # predicted_right_count_one = tf.less(tf.subtract(self.yv, self.yv_), 0.7)
+        # predicted_right_count_one = tf.cast(predicted_right_count_one, tf.int32)
+        # predicted_right_count_one = tf.multiply(elements_1, predicted_right_count_one)
+        # predicted_right_count_one = tf.reduce_sum(predicted_right_count_one)
 
-        elements_neg1 = tf.equal(self.yv, -1)
-        elements_neg1 = tf.cast(elements_neg1, tf.int32)
-        predicted_right_count_neg_one = tf.less(tf.subtract(self.yv_, self.yv), 0.7)
-        predicted_right_count_neg_one = tf.cast(predicted_right_count_neg_one, tf.int32)
-        predicted_right_count_neg_one = tf.multiply(elements_neg1, predicted_right_count_neg_one)
-        predicted_right_count_neg_one = tf.reduce_sum(predicted_right_count_neg_one)
+        # elements_neg1 = tf.equal(self.yv, -1)
+        # elements_neg1 = tf.cast(elements_neg1, tf.int32)
+        # predicted_right_count_neg_one = tf.less(tf.subtract(self.yv_, self.yv), 0.7)
+        # predicted_right_count_neg_one = tf.cast(predicted_right_count_neg_one, tf.int32)
+        # predicted_right_count_neg_one = tf.multiply(elements_neg1, predicted_right_count_neg_one)
+        # predicted_right_count_neg_one = tf.reduce_sum(predicted_right_count_neg_one)
 
-        self.accuracy = (predicted_right_count_zero + predicted_right_count_one + predicted_right_count_neg_one)/tf.size(elements_0)
+        # self.accuracy = (predicted_right_count_zero + predicted_right_count_one + predicted_right_count_neg_one)/tf.size(elements_0)
+
+        predicted_correct = tf.less(tf.abs(self.yv - self.yv_), 0.5)
+        self.accuracy = tf.cast(predicted_correct, tf.int32)
 
     def calc_loss(self, l2_beta):
         """Calculate the loss function for the policy-value network
@@ -79,6 +82,8 @@ class ResNet():
             The loss tensor
         """
         value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
+        #value_loss = tf.reduce_mean(tf.square(tf.subtract(self.yv, self.yv_)))
+
         policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
         # L2 loss
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -213,7 +218,7 @@ class ResNet():
         This code is used in test only.
         """
         batch_size = 500
-        epoch_num = 100
+        epoch_num = 50
         fake_x, fake_yp, fake_yv = self.generate_fake_data(training_data_num)
         
         #split into batches
@@ -222,13 +227,15 @@ class ResNet():
             accuracies = []
             gradients = []
             for batch_data, batch_p, batch_v in self.generate_mini_batches(batch_size, fake_x, fake_yp, fake_yv):
-                _, batch_loss, batch_acc, batch_gradient = self.sess.run(
-                        [self.train_op, self.loss, self.accuracy, self.gradient],
+                _, batch_loss, batch_acc, batch_yv_ = self.sess.run(
+                        [self.train_op, self.loss, self.accuracy, self.yv_],
                         feed_dict={self.x: batch_data, self.yp: batch_p, self.yv:batch_v}
                     )
                 
                 losses.append(batch_loss)
                 accuracies.append(batch_acc)
+                # print("batch_v", batch_v)
+                # print("batch_yv_", batch_yv_)
               
             print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
             print("Accuracy for epoch {} is {}".format(epoch, np.mean(accuracies)))
@@ -237,11 +244,14 @@ class ResNet():
         #Achieved 96% test accuracy for counting, using 1000 training data, 500 batch size and 100 epochs
         print("Start testing")
         test_fake_x, test_fake_yp, test_fake_yv = self.generate_fake_data(test_data_num)
-        test_loss, test_acc = self.sess.run(
-            [self.loss, self.accuracy],
+        test_loss, test_acc, fake_yv_ = self.sess.run(
+            [self.loss, self.accuracy, self.yv_],
             feed_dict={self.x: test_fake_x, self.yp: test_fake_yp, self.yv:test_fake_yv}
         )
-        print("For {} testing data points, test loss is {}, test accuracy is {}". format(test_data_num, np.mean(test_loss), test_acc))
+        print("For {} testing data points, test loss is {}, test accuracy is {}". format(test_data_num, np.mean(test_loss),  np.mean(test_acc)))
+        print(fake_yv_)
+        print("actual labels:")
+        print(test_fake_yv)
 
     def predict(self, board):
         """Given a board. predict (p,v) according to the current res net

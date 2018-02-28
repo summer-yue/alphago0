@@ -24,7 +24,7 @@ class AlphaGoZero():
         self.utils = GoUtils()
         self.sess = tf.Session()
         with self.sess.as_default():
-            self.nn = ResNet(board_dimension = 5, l2_beta=0.01, model_path = model_path, restored=restored)
+            self.nn = ResNet(board_dimension = 5, l2_beta=0.0001, model_path = model_path, restored=restored)
 
     def train_nn(self, training_game_number, simulation_number):
         """Training the resnet by self play using MCTS
@@ -129,7 +129,7 @@ class AlphaGoZero():
             next_move: (row, col) indicating where the neural net with MCTS would place the stone
         """
         mcts_play_instance = MCTS(board, self.nn, self.utils, simluation_number = simulation_number)
-        _, next_move, _ = mcts_play_instance.run_all_simulations(temp1 = 0.2, temp2 = 0.1, step_boundary=2)
+        next_move = mcts_play_instance.run_simulations_without_noise()
 
         return next_move
         
