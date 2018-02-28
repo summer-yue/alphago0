@@ -208,3 +208,28 @@ class MCTS():
         assert valid_move == True
 
         return new_board, move, policy_with_noise
+
+    def run_simulations_without_noise(self):
+        """Run the specified number of simluations according to simluation_number
+        when initializing the object. This is used in inference so there is no noise.
+        Returns: 
+            move: the best move generated according to the MCTS simulations
+        """
+        for i in range(self.simluation_number):
+            self.run_one_simluation()
+
+        if self.random_seed:
+            np.random.seed(seed=self.random_seed)
+
+        #Pick the most explored move for root node with randomization
+        root_edges = self.root_node.edges
+
+        #Return the edge with the largest N in root_edges
+        if len(root_edges) > 0:
+            largest_N = max([e.N for e in root_edges])
+            sample_edges = [e for e in root_edges if abs(e.N - largest_N) < 1e-3]
+            edge_with_largest_N = random.choice(sample_edges)
+            return edge_with_largest_N.move
+        else:
+            return (-1, -1)
+        
