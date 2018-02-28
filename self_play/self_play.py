@@ -34,7 +34,7 @@ class SelfPlay():
                 True if the player passed, False otherwise
         """
         ts_instance = MCTS(self.current_board, self.nn, self.utils, self.simluation_number)
-        new_board, move, policy = ts_instance.run_all_simulations(temp1 = 0.2, temp2 = 0.1, step_boundary=2)
+        new_board, move, policy = ts_instance.run_all_simulations(temp1 = 1, temp2 = 0.2, step_boundary=5)
 
         print("move is:", move)
         if len(self.policies) == 0:

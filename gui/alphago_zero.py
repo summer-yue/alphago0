@@ -36,12 +36,12 @@ class AlphaGoZero():
             Nothing, but model_path/game_1 has the model trained
         Notes:
             Training 1000 games, total board number seen = 1000 * 20 = 20,000
-            After each game, 100 boards are sampled. Each board is used 5 times.
-            Equivalent to 20,000 data over 5 epochs, 100,000 boards seen
+            After each game, 200 boards are sampled. Each board is used 8000/200 = 40 times.
+            Equivalent to batch size 100 data over 40 epochs, 100,000 boards seen
             Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
-        BATCH_SIZE = 100
-        BUCKET_SIZE = 4000 # bucket size used in experience replay
+        BATCH_SIZE = 1000
+        BUCKET_SIZE = 8000 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -105,7 +105,7 @@ class AlphaGoZero():
         """
         potential_moves_policy, winning_prob = self.nn.predict(board)
 
-        print("policy is:", potential_moves_policy)
+        #print("policy is:", potential_moves_policy)
         found_move = False
         while not found_move:
             board_copy = board.copy()
