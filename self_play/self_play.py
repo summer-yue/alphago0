@@ -65,28 +65,28 @@ class SelfPlay():
 
         winner, _ = self.utils.evaluate_winner(self.current_board.board_grid)
         #corresponding winner for each history board from current perspective
-        new_training_labels_v = np.array([[winner] if history_board.player == self.current_board.player else [-winner] \
+        new_training_labels_v = np.array([[winner] if history_board.player != self.current_board.player else [-winner] \
             for history_board in self.history_boards])
         new_training_labels_v = np.repeat(new_training_labels_v, 5, axis=0)
-        new_training_labels_v = np.append(new_training_labels_v, -new_training_labels_v, axis=0)
+        new_training_labels_v = np.append(new_training_labels_v, new_training_labels_v, axis=0)
         new_training_labels_p = np.repeat(np.array(self.policies), 5, axis=0)
         new_training_labels_p = np.append(new_training_labels_p, new_training_labels_p, axis=0)
 
-        #print(self.policies)
-        #print()
-        #print(new_training_labels_p)
-        # print("current board is ", self.current_board)
-        # print("a game is finished and winner is:", winner)
+        # print(self.policies)
         # print()
-        # print("self play 10 boards")
-        # for board in np.append(boards_data, reversed_boards_data):
-        #     print(str(board))
-        # print()
-        # print("v labels")
-        # print(new_training_labels_v)
-        # print()
-        # print("p labels")
-        # print(new_training_labels_p)
+        print(new_training_labels_p)
+        print("current board is ", self.current_board)
+        print("a game is finished and winner is:", winner)
+        print()
+        print("self play 10 boards")
+        for board in np.append(boards_data, reversed_boards_data):
+            print(str(board))
+        print()
+        print("v labels")
+        print(new_training_labels_v)
+        print()
+        print("p labels")
+        print(new_training_labels_p)
 
         return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
 
