@@ -24,7 +24,7 @@ class AlphaGoZero():
         self.utils = GoUtils()
         self.sess = tf.Session()
         with self.sess.as_default():
-            self.nn = ResNet(board_dimension = 5, l2_beta=0.0001, model_path = model_path, restored=restored)
+            self.nn = ResNet(board_dimension = 5, l2_beta=1e-4, model_path = model_path, restored=restored)
 
     def train_nn(self, training_game_number, simulation_number):
         """Training the resnet by self play using MCTS
@@ -36,12 +36,13 @@ class AlphaGoZero():
             Nothing, but model_path/game_1 has the model trained
         Notes:
             Training 1000 games, total board number seen = 1000 * 20 = 20,000
-            After each game, 200 boards are sampled. Each board is used 8000/200 = 40 times.
+            After each game, 500 boards are sampled. Each board is used 8000/500 = 16 times.
+            total boards seen = 1000 x 500 = 500,000
             Equivalent to batch size 100 data over 40 epochs, 100,000 boards seen
             Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
-        BATCH_SIZE = 1000
-        BUCKET_SIZE = 8000 # bucket size used in experience replay
+        BATCH_SIZE = 60
+        BUCKET_SIZE = 120 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -93,6 +94,7 @@ class AlphaGoZero():
                         model_path = self.model_path + '/batch_' + str(batch_num)
                         self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v, model_path)
                     else:
+                        print("batch number", batch_num)
                         self.nn.train(batch_training_boards, batch_training_labels_p, batch_training_labels_v)
 
     def play_with_raw_nn(self, board):

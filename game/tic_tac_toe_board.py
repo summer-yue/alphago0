@@ -3,7 +3,7 @@ import copy
 from game.game_board import GameBoard
 
 class TicTacToeBoard(GameBoard):
-    def __init__(self, player=1, board_grid = None, game_history = None):
+    def __init__(self, player=1, board_grid = [], game_history = None):
         """Initialize a tic tac toe board
         Args:
             player: 1 (player who plays first) or -1 indicating the two players

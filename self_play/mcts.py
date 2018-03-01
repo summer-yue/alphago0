@@ -161,24 +161,39 @@ class MCTS():
         root_edges = self.root_node.edges
     
         policy = np.zeros(self.nn.board_dimension*self.nn.board_dimension+1)
+
+        #If in the second part of the game
         if len(self.root_node.board.game_history) > step_boundary:
-            sum_N = sum([edge.N**(1/temp2) for edge in root_edges])
+            #If exploration is set to off
+            if abs(temp2) < 1e-3:
+                if len(root_edges) > 0:
+                    largest_N = max([e.N for e in root_edges])
+                    sample_edges = [e for e in root_edges if abs(e.N - largest_N) < 1e-3]
+                    edge_with_largest_N = random.choice(sample_edges)
+                    (r, c) = edge_with_largest_N.move
+                    if r == -1 and c == -1:
+                        policy[self.nn.board_dimension*self.nn.board_dimension] = 1
+                    else:
+                        policy[r*self.nn.board_dimension+c] = 1
+                else:
+                    policy[self.nn.board_dimension*self.nn.board_dimension] = 1
+            else:
+                sum_N = sum([edge.N**(1/temp2) for edge in root_edges])
+                for edge in root_edges:
+                    (r, c) = edge.move
+                    if (r == -1) and (c == -1):
+                        policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**(1/temp2) * 1.0 / sum_N)
+                    else:
+                        policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp2) * 1.0 / sum_N)
+        #First part of the game
         else:
             sum_N = sum([edge.N**(1/temp1) for edge in root_edges])
-
-        for edge in root_edges:
-            (r, c) = edge.move
-            if (r == -1) and (c == -1): #Pass
-                if len(self.root_node.board.game_history) > step_boundary:
-                    policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**(1/temp2) * 1.0 / sum_N)
-                else:
+            for edge in root_edges:
+                (r, c) = edge.move
+                if (r == -1) and (c == -1): #Pass      
                     policy[self.nn.board_dimension*self.nn.board_dimension] = (edge.N**(1/temp1) * 1.0 / sum_N)
-
-            else:
-                if len(self.root_node.board.game_history) > step_boundary:
-                    policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp2) * 1.0 / sum_N) #Temparature = 0.33 low amount of exploration
-                else:
-                    policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp1) * 1.0 / sum_N) # t = 0.5, relatively high exploration
+                else:   
+                    policy[r*self.nn.board_dimension+c] = (edge.N**(1/temp1) * 1.0 / sum_N) # t = 1, relatively high exploration
 
         #Additional exploration is achieved by adding Dirichlet noise to the prior probabilities 
         policy_with_noise = 0.75 * policy

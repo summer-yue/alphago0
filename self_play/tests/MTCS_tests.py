@@ -23,7 +23,7 @@ class MCTSTest(unittest.TestCase):
 
         for i in range(10):
             mcts_instance = MCTS(board, nn, utils, simluation_number = 10000, random_seed=2)
-            board, move, policy = mcts_instance.run_all_simulations(temp1 = 0.2, temp2 = 0.1, step_boundary=2)
+            board, move, policy = mcts_instance.run_all_simulations(temp1 = 0.2, temp2 = 0., step_boundary=2)
             if utils.is_game_finished(board):
                 print("winner is : {}".format(utils.evaluate_winner(board.board_grid)))
             print("move {} is {}".format(i, move))

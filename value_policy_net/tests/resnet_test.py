@@ -11,7 +11,7 @@ from value_policy_net.resnet import ResNet
 class ResNetTest(unittest.TestCase):
     def test_train_resnet(self):
         with tf.Session().as_default():
-            res = ResNet(board_dimension=5, l2_beta=0.0001)
+            res = ResNet(board_dimension=5, l2_beta=0.001)
             res.fake_train("../models_fake")
 
     # def test_convert_to_onehot(self):

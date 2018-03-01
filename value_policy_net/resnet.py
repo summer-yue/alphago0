@@ -38,6 +38,11 @@ class ResNet():
         self.sess = tf.get_default_session()
         self.sess.run(tf.global_variables_initializer())
 
+        self.recorded_losses = np.empty(0)
+        self.training_data_sample = np.empty(0)
+        self.training_label_p_sample = np.empty(0)
+        self.training_label_v_sample = np.empty(0)
+
         if restored:
             saver = tf.train.Saver(max_to_keep=500)
             saver.restore(self.sess, model_path)
@@ -144,7 +149,7 @@ class ResNet():
 
         A = self.build_conv_block(input_tensor=x, varscope="conv1")
 
-        for i in range(2):
+        for i in range(3):
             A = self.build_res_block(input_tensor=A, varscope="res" + str(i))
 
         #Policy head
@@ -175,14 +180,33 @@ class ResNet():
         Returns:
             None, but a model is saved at the model_path
         """
+        self.training_data_sample = np.append(self.training_data_sample, training_boards[0], axis=0)
+        self.training_label_p_sample = np.append(self.training_label_p_sample, training_labels_p[0], axis=0)
+        self.training_label_v_sample = np.append(self.training_label_v_sample, training_labels_v[0], axis=0)
+        if len(self.training_label_v_sample) > 5:
+            predicted_p, predicted_v = self.sess.run(
+                [self.yp_, self.yv_],
+                feed_dict={self.x: self.training_data_sample, self.yp: self.training_label_p_sample, self.yv: self.training_label_v_sample}
+            )
+            print("Sample data and their predictions")
+            print(self.training_data_sample)
+            print(self.training_label_v_sample)
+            print(predicted_v)
+            self.training_data_sample = np.empty(0)
+            self.training_label_p_sample = np.empty(0)
+            self.training_label_v_sample = np.empty(0)
+
         training_boards = np.array([self.convert_to_resnet_input(board) for board in training_boards])
         if model_path:
             saver = tf.train.Saver(max_to_keep=500)
 
-        self.sess.run(
-            self.train_op,
+        _, loss = self.sess.run(
+            [self.train_op, self.loss],
             feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
         )
+
+        self.recorded_losses = np.append(self.recorded_losses, loss, axis=0)
+        print("Average loss for each data", str(np.mean(self.recorded_losses)))
         if model_path:
             save_path = saver.save(self.sess, model_path)
 
