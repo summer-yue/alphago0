@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import random
+import logging
 
 from game.game_board import GameBoard
 from game.go_board import GoBoard
@@ -61,6 +62,16 @@ class ResNet():
         self.training_label_p_sample = np.empty(0)
         self.training_label_v_sample = np.empty(0)
 
+        self.logger = logging.getLogger('alphago0_training')
+        self.logger.setLevel(logging.INFO)
+        # create file handler which logs even info messages
+        fh = logging.FileHandler('alphago0_training.log')
+
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh) 
+        self.logger.info('creating an instance of ResNet')
+        
         if restored:
             saver = tf.train.Saver(max_to_keep=500)
             saver.restore(self.sess, model_path)
@@ -200,6 +211,7 @@ class ResNet():
             None, but a model is saved at the model_path
         """
         self.batch_num += 1
+        self.logger.info("batch number:" + str(self.batch_num))
         training_boards = np.array([self.convert_to_resnet_input(board) for board in training_boards])
         _, training_loss, summary = self.sess.run(
             [self.train_op, self.loss, self.merged],
@@ -221,6 +233,7 @@ class ResNet():
             self.training_label_v_sample = np.append(self.training_label_v_sample, training_labels_v[0:3], axis=0)
         
         print("number of training data sample", len(self.training_label_v_sample))
+        self.logger.info("number of training data sample " + str(len(self.training_label_v_sample)))
         predicted_p, predicted_v, loss = self.sess.run(
             [self.yp_, self.yv_, self.loss],
             feed_dict={self.x: self.training_data_sample, self.yp: self.training_label_p_sample, self.yv: self.training_label_v_sample}
@@ -232,6 +245,10 @@ class ResNet():
             self.recorded_losses = np.append(self.recorded_losses, [loss], axis=0)
         print("Losses throughout training", str(self.recorded_losses))
         print("Training loss for this batch is:", training_loss)
+
+        self.logger.info("Losses throughout training " +  str(self.recorded_losses))
+        self.logger.info("Training loss for this batch is: " + str(training_loss))
+
         if model_path:
             saver = tf.train.Saver(max_to_keep=500)
             save_path = saver.save(self.sess, model_path)
