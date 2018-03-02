@@ -35,14 +35,17 @@ class AlphaGoZero():
         Returns:
             Nothing, but model_path/game_1 has the model trained
         Notes:
-            Training 1000 games, total board number seen = 1000 * 20 = 20,000
-            After each game, 500 boards are sampled. Each board is used 8000/500 = 16 times.
-            total boards seen = 1000 x 500 = 500,000
-            Equivalent to batch size 100 data over 40 epochs, 100,000 boards seen
+            Training 2000 games, total distinct board number seen = 2000 * 50 = 100,000
+            After each game, 2000 boards are sampled. Each board is used 2/25*25000/50 = 40 times.
             Fake dataset also had 100,000 data seen (achieved 96% test accuracy on 50 test boards for counting)
         """
+
+        #Batch and bucket size used for testing
         BATCH_SIZE = 60
-        BUCKET_SIZE = 120 # bucket size used in experience replay
+        BUCKET_SIZE = 100 
+        
+        # BATCH_SIZE = 2000
+        # BUCKET_SIZE = 25000 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
@@ -137,5 +140,5 @@ class AlphaGoZero():
         
 if __name__ == '__main__':
     alphpago0 = AlphaGoZero(model_path="../models", restored=False)
-    alphpago0.train_nn(training_game_number=1000, simulation_number=300)
+    alphpago0.train_nn(training_game_number=2000, simulation_number=300)
     

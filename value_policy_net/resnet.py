@@ -27,17 +27,35 @@ class ResNet():
         self.yp = tf.placeholder(tf.float32, [None,  self.board_dimension*self.board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
-        with tf.variable_scope("intialization", reuse=tf.AUTO_REUSE) as scope:
-            self.calc_loss(l2_beta)
-            self.gradient = tf.gradients(self.loss, self.x)
-            self.calc_accuracy()
-            #self.optimizer = tf.train.MomentumOptimizer(1e-4, 0.9)
+        with tf.variable_scope("loss", reuse=tf.AUTO_REUSE) as scope:
+            value_loss, policy_loss, reg_loss = self.calc_loss(l2_beta)
+        #Used for Tensorboard
+        self.batch_num = 0 
+        tf.summary.scalar('TrainingLoss', self.loss)
+        tf.summary.scalar('TraingValueLoss', value_loss)
+        tf.summary.scalar('TraingPolicyLoss', policy_loss)
+        tf.summary.scalar('TraingRegLoss', reg_loss)
+
+        #Used for testing with fake training data
+        # self.gradient = tf.gradients(self.loss, self.x)
+        # with tf.variable_scope("accuracy", reuse=tf.AUTO_REUSE) as scope:
+        #     self.calc_accuracy()
+    
+        with tf.variable_scope("train", reuse=tf.AUTO_REUSE) as scope:
             self.optimizer = tf.train.AdamOptimizer()
+            #Original momentum optimizer, adam works better though
+            #self.optimizer = tf.train.MomentumOptimizer(1e-4, 0.9)
             self.train_op = self.optimizer.minimize(self.loss)
 
         self.sess = tf.get_default_session()
+
+         #Tensorboard Summary
+        self.merged = tf.summary.merge_all()
+        self.train_writer = tf.summary.FileWriter('summary/train', self.sess.graph)
+
         self.sess.run(tf.global_variables_initializer())
 
+        #For logging
         self.recorded_losses = np.empty(0)
         self.training_data_sample = np.empty(0)
         self.training_label_p_sample = np.empty(0)
@@ -84,15 +102,16 @@ class ResNet():
         Args:
             l2_beta: beta constant used for l2 regularization
         Returns:
-            The loss tensor
+            The loss tensors
         """
-        value_loss = tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_)
+        value_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_))
         #value_loss = tf.reduce_mean(tf.square(tf.subtract(self.yv, self.yv_)))
-
-        policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits)
+        policy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits))
         # L2 loss
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        self.loss = value_loss + policy_loss + l2_beta * sum(reg_losses)
+        reg_losses = l2_beta * sum(reg_losses)
+        self.loss = value_loss + policy_loss + reg_losses
+        return value_loss, policy_loss, reg_losses
         
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
@@ -180,11 +199,13 @@ class ResNet():
         Returns:
             None, but a model is saved at the model_path
         """
+        self.batch_num += 1
         training_boards = np.array([self.convert_to_resnet_input(board) for board in training_boards])
-        _, training_loss = self.sess.run(
-            [self.train_op, self.loss],
+        _, training_loss, summary = self.sess.run(
+            [self.train_op, self.loss, self.merged],
             feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
         )
+        self.train_writer.add_summary(summary, self.batch_num)
 
         if len(self.training_data_sample) == 0:
             self.training_data_sample = training_boards[0:3]
@@ -204,14 +225,13 @@ class ResNet():
             [self.yp_, self.yv_, self.loss],
             feed_dict={self.x: self.training_data_sample, self.yp: self.training_label_p_sample, self.yv: self.training_label_v_sample}
         )
-        loss = np.mean(loss)
 
         if len(self.recorded_losses) == 0:
             self.recorded_losses = np.array([loss])
         else:
             self.recorded_losses = np.append(self.recorded_losses, [loss], axis=0)
         print("Losses throughout training", str(self.recorded_losses))
-        print("Training loss for this batch is:", np.mean(training_loss))
+        print("Training loss for this batch is:", training_loss)
         if model_path:
             saver = tf.train.Saver(max_to_keep=500)
             save_path = saver.save(self.sess, model_path)
@@ -263,9 +283,10 @@ class ResNet():
                     )
                 
                 losses.append(batch_loss)
-                accuracies.append(batch_acc)
-                # print("batch_v", batch_v)
-                # print("batch_yv_", batch_yv_)
+                accuracies.append(np.mean(batch_acc))
+               
+            summary = self.sess.run(self.merged, feed_dict={self.x: fake_x, self.yp:fake_yp, self.yv:fake_yv})
+            self.train_writer.add_summary(summary, epoch)
               
             print("Loss for epoch {} is {}".format(epoch, np.mean(losses)))
             print("Accuracy for epoch {} is {}".format(epoch, np.mean(accuracies)))
@@ -278,7 +299,8 @@ class ResNet():
             [self.loss, self.accuracy, self.yv_],
             feed_dict={self.x: test_fake_x, self.yp: test_fake_yp, self.yv:test_fake_yv}
         )
-        print("For {} testing data points, test loss is {}, test accuracy is {}". format(test_data_num, np.mean(test_loss),  np.mean(test_acc)))
+        test_acc = np.mean(test_acc)
+        print("For {} testing data points, test loss is {}, test accuracy is {}". format(test_data_num, test_loss, test_acc))
         print(fake_yv_)
         print("actual labels:")
         print(test_fake_yv)
