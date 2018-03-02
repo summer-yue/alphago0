@@ -68,9 +68,9 @@ class SelfPlay():
         new_training_labels_v = np.array([[winner] if history_board.player != self.current_board.player else [-winner] \
             for history_board in self.history_boards])
         new_training_labels_v = np.repeat(new_training_labels_v, 5, axis=0)
-        #new_training_labels_v = np.append(new_training_labels_v, new_training_labels_v, axis=0)
+        new_training_labels_v = np.append(new_training_labels_v, new_training_labels_v, axis=0)
         new_training_labels_p = np.repeat(np.array(self.policies), 5, axis=0)
-        #new_training_labels_p = np.append(new_training_labels_p, new_training_labels_p, axis=0)
+        new_training_labels_p = np.append(new_training_labels_p, new_training_labels_p, axis=0)
 
         # print(self.policies)
         # print()
@@ -88,5 +88,5 @@ class SelfPlay():
         # print("p labels")
         # print(new_training_labels_p)
 
-        #return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
-        return boards_data, new_training_labels_p, new_training_labels_v
+        return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
+        #return boards_data, new_training_labels_p, new_training_labels_v

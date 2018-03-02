@@ -27,13 +27,13 @@ class ResNet():
         self.yp = tf.placeholder(tf.float32, [None,  self.board_dimension*self.board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
-
-        self.calc_loss(l2_beta)
-        self.gradient = tf.gradients(self.loss, self.x)
-        self.calc_accuracy()
-        #self.optimizer = tf.train.MomentumOptimizer(1e-4, 0.9)
-        self.optimizer = tf.train.AdamOptimizer()
-        self.train_op = self.optimizer.minimize(self.loss)
+        with tf.variable_scope("intialization", reuse=tf.AUTO_REUSE) as scope:
+            self.calc_loss(l2_beta)
+            self.gradient = tf.gradients(self.loss, self.x)
+            self.calc_accuracy()
+            #self.optimizer = tf.train.MomentumOptimizer(1e-4, 0.9)
+            self.optimizer = tf.train.AdamOptimizer()
+            self.train_op = self.optimizer.minimize(self.loss)
 
         self.sess = tf.get_default_session()
         self.sess.run(tf.global_variables_initializer())
@@ -180,34 +180,40 @@ class ResNet():
         Returns:
             None, but a model is saved at the model_path
         """
-        self.training_data_sample = np.append(self.training_data_sample, training_boards[0], axis=0)
-        self.training_label_p_sample = np.append(self.training_label_p_sample, training_labels_p[0], axis=0)
-        self.training_label_v_sample = np.append(self.training_label_v_sample, training_labels_v[0], axis=0)
-        if len(self.training_label_v_sample) > 5:
-            predicted_p, predicted_v = self.sess.run(
-                [self.yp_, self.yv_],
-                feed_dict={self.x: self.training_data_sample, self.yp: self.training_label_p_sample, self.yv: self.training_label_v_sample}
-            )
-            print("Sample data and their predictions")
-            print(self.training_data_sample)
-            print(self.training_label_v_sample)
-            print(predicted_v)
-            self.training_data_sample = np.empty(0)
-            self.training_label_p_sample = np.empty(0)
-            self.training_label_v_sample = np.empty(0)
-
         training_boards = np.array([self.convert_to_resnet_input(board) for board in training_boards])
-        if model_path:
-            saver = tf.train.Saver(max_to_keep=500)
-
-        _, loss = self.sess.run(
+        _, training_loss = self.sess.run(
             [self.train_op, self.loss],
             feed_dict={self.x: training_boards, self.yp: training_labels_p, self.yv: training_labels_v}
         )
 
-        self.recorded_losses = np.append(self.recorded_losses, loss, axis=0)
-        print("Average loss for each data", str(np.mean(self.recorded_losses)))
+        if len(self.training_data_sample) == 0:
+            self.training_data_sample = training_boards[0:3]
+        else:
+            self.training_data_sample = np.append(self.training_data_sample, training_boards[0:3], axis=0)
+        if len(self.training_label_p_sample) == 0:
+            self.training_label_p_sample = training_labels_p[0:3]
+        else:
+            self.training_label_p_sample = np.append(self.training_label_p_sample, training_labels_p[0:3], axis=0)
+        if len(self.training_label_v_sample) == 0:
+            self.training_label_v_sample = training_labels_v[0:3]
+        else:
+            self.training_label_v_sample = np.append(self.training_label_v_sample, training_labels_v[0:3], axis=0)
+        
+        print("number of training data sample", len(self.training_label_v_sample))
+        predicted_p, predicted_v, loss = self.sess.run(
+            [self.yp_, self.yv_, self.loss],
+            feed_dict={self.x: self.training_data_sample, self.yp: self.training_label_p_sample, self.yv: self.training_label_v_sample}
+        )
+        loss = np.mean(loss)
+
+        if len(self.recorded_losses) == 0:
+            self.recorded_losses = np.array([loss])
+        else:
+            self.recorded_losses = np.append(self.recorded_losses, [loss], axis=0)
+        print("Losses throughout training", str(self.recorded_losses))
+        print("Training loss for this batch is:", np.mean(training_loss))
         if model_path:
+            saver = tf.train.Saver(max_to_keep=500)
             save_path = saver.save(self.sess, model_path)
 
     def generate_mini_batches(self, batch_size, train_data, train_labels_p, train_labels_v):

@@ -50,7 +50,7 @@ class Go:
         self.pass_button_clicked = False
         self.passed_once = False
         self.game_over = False
-        self.alphpago0 = AlphaGoZero(model_path="../models/batch_10", restored=True)
+        self.alphpago0 = AlphaGoZero(model_path="../models/batch_700", restored=True)
 
     def machine_responds(self):
         print("machine responds")        
@@ -82,6 +82,10 @@ class Go:
             if self.mouse_in_botton(pos):
                 if not self._playing:
                     self.start()
+                    # Machine plays first move
+                    self.machine_responds()
+                    self.lastPosition = self.go_board.get_last_position()
+                    self.print_winner()
                 else:
                     self.surrender()
                     self.go_board.flip_player()
@@ -94,8 +98,9 @@ class Go:
 
                     # Machine plays
                     self.machine_responds()
-                    self.print_winner()
                     self.lastPosition = self.go_board.get_last_position()
+                    self.print_winner()
+                    
                 else:
                     # Double Pass Game Over
                     print("Game Over!")
