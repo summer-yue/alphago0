@@ -24,12 +24,13 @@ class ResNet():
         self.board_dimension = board_dimension
 
         #Define the tensors that compose the graph
+        self.regularizer = tf.contrib.layers.l2_regularizer(l2_beta)
         self.x = tf.placeholder(tf.float32, [None, self.board_dimension, self.board_dimension, 3], name="input")
         self.yp = tf.placeholder(tf.float32, [None,  self.board_dimension*self.board_dimension + 1], name="labels_p")
         self.yv = tf.placeholder(tf.float32, [None, 1], name="labels_v")
         self.yp_, self.yv_, self.yp_logits, self.yv_logits = self.build_network(self.x) 
         with tf.variable_scope("loss", reuse=tf.AUTO_REUSE) as scope:
-            value_loss, policy_loss, reg_loss = self.calc_loss(l2_beta)
+            value_loss, policy_loss, reg_loss = self.calc_loss()
         #Used for Tensorboard
         self.batch_num = 0 
         tf.summary.scalar('TrainingLoss', self.loss)
@@ -108,32 +109,33 @@ class ResNet():
         predicted_correct = tf.less(tf.abs(self.yv - self.yv_), 0.5)
         self.accuracy = tf.cast(predicted_correct, tf.int32)
 
-    def calc_loss(self, l2_beta):
+    def calc_loss(self):
         """Calculate the loss function for the policy-value network
         Args:
             l2_beta: beta constant used for l2 regularization
         Returns:
             The loss tensors
         """
+
         value_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=self.yv, predictions=self.yv_))
         #value_loss = tf.reduce_mean(tf.square(tf.subtract(self.yv, self.yv_)))
         policy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.yp, logits=self.yp_logits))
         # L2 loss
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        reg_losses = l2_beta * sum(reg_losses)
+        reg_losses = tf.reduce_sum(reg_losses)
         self.loss = value_loss + policy_loss + reg_losses
         return value_loss, policy_loss, reg_losses
         
     def build_conv_block(self, input_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME", kernel_regularizer=self.regularizer)
             Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A
 
     def build_res_layer(self, input_tensor, res_tensor, varscope):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=64, kernel_size=3, strides=1, padding="SAME", kernel_regularizer=self.regularizer)
             Z = tf.layers.batch_normalization(Z)
             A = Z + res_tensor
             A = tf.nn.relu(A)
@@ -152,7 +154,7 @@ class ResNet():
 
     def build_head_conv_layer(self, input_tensor, varscope, filter):
         with tf.variable_scope(varscope, reuse=tf.AUTO_REUSE) as scope:
-            Z = tf.layers.conv2d(input_tensor, filters=filter, kernel_size=1, strides=1, padding="SAME")
+            Z = tf.layers.conv2d(input_tensor, filters=filter, kernel_size=1, strides=1, padding="SAME", kernel_regularizer=self.regularizer)
             Z = tf.layers.batch_normalization(Z)
             A = tf.nn.relu(Z, name="A")
             return A

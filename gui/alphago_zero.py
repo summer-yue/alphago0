@@ -41,11 +41,11 @@ class AlphaGoZero():
         """
 
         #Batch and bucket size used for testing
-        BATCH_SIZE = 60
-        BUCKET_SIZE = 100 
+        # BATCH_SIZE = 60
+        # BUCKET_SIZE = 100 
         
-        # BATCH_SIZE = 2000
-        # BUCKET_SIZE = 25000 # bucket size used in experience replay
+        BATCH_SIZE = 2000
+        BUCKET_SIZE = 25000 # bucket size used in experience replay
         BLACK = 1 # black goes first
         batch_num = 0
 
