@@ -15,6 +15,7 @@ The original AlphaGo Zero paper can be found [here](https://www.nature.com/artic
 ```
 pip install -e .
 ```
+<img src="docs/images/gui_initial.png" width="125" height="200"/> <img src="docs/images/gui_middle.png" width="125" height="200"/> 
 ## Step 3. To play with an AI Go player that was already trained.
 ```
 python gui/human_machine_gui.py
@@ -22,7 +23,7 @@ python gui/human_machine_gui.py
 A pop up GUI is going to show up. It will look like this. Click start to start playing.
 You will be player black who moves first. Click an intersection on the board to place a move. <br>
 <br>
-<img src="docs/images/gui_initial.png" width="125" height="200"/> <img src="docs/images/gui_middle.png" width="125" height="200"/> 
+<img src="docs/images/training_loss_tf_board.png" width="350" height="280"/> 
 
 ## Step 4. (Optional) If you want to train your own AI go player, this may take a few hours.
 ```
@@ -30,9 +31,9 @@ python gui/alphago_zero.py
 ```
 The models will be stored in the models folder in your local directory. A new model will be stored after each 10 batches of training. To play against your trained classifier, modify the init function of file gui/human_machine_gui.py.
 ```python
-self.alphpago0 = AlphaGoZero(model_path="../models/batch_370", restored=True)
+self.alphpago0 = AlphaGoZero(model_path="../models/batch_1250", restored=True)
 ```
-Currently, this line sets the AlphaGo model to the local model after 370 batches of training. Change the model path to your desired model trained earlier in you local models/ folder. Then repeat step 3.
+Currently, this line sets the AlphaGo model to the local model after 1250 batches of training. Change the model path to your desired model trained earlier in you local models/ folder. Then repeat step 3.
 ## Step 5. (Optional) The project also supports human-human playing mode.
 ```
 python gui/go_gui.py
