@@ -106,26 +106,26 @@ class Go:
                     print("Game Over!")
                     self.game_over = True
 
-                self.print_winner()
+                # self.print_winner()
 
             elif self._playing:
                 c = (pos[0] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
                 r = (pos[1] - PADDING + WIDTH // 2) // (WIDTH + MARGIN)
 
                 if 0 <= r < BOARD_DIM and 0 <= c < BOARD_DIM:
-                    _, self.go_board = self.utils.make_move(board=self.go_board, move=(r, c))
-                    self.passed_once = False
-                    self.print_winner()
-                    self.lastPosition = self.go_board.get_last_position()
-                    self.on_render()
+                    is_valid, self.go_board = self.utils.make_move(board=self.go_board, move=(r, c))
+                    if is_valid:
+                        self.passed_once = False
+                        self.print_winner()
+                        self.lastPosition = self.go_board.get_last_position()
+                        self.on_render()
 
-                    # Machine plays
-                    self.machine_responds()
-                    self.print_winner()
-                    self.lastPosition = self.go_board.get_last_position()
-             
-        # print(self.go_board)
-        # print()
+                        # Machine plays
+                        self.machine_responds()
+                        self.print_winner()
+                        self.lastPosition = self.go_board.get_last_position()
+                    else:
+                        print("Invalid move!")
     
     def on_render(self):
         self.render_go_piece()
