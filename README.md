@@ -3,13 +3,15 @@ An open-sourced version of the AlphaGo Zero algorithms in Python and Tensorflow.
 <br>
 The original AlphaGo Zero paper can be found [here](https://www.nature.com/articles/nature24270.pdf) Python 3 is required to run the code. We used the Tic Tac Toe game to test our MCTS algorithms and "Counting Stones" to test our residual network. A more detailed explanation on AlphaGo Zero and the clone can be found on [my blog post](https://www.summeryue.me/blog/2018/alpphago-zero-explained/).
 
+Update: please note that this project was built on Tensorflow 1.x. It is not compatible with Tensorflow 2.x.
+
 ## AlphaGo Zero Clone Evaluation
-For our simple AlphaGo Zero agent, we trained it on my local MacBook Pro. We used 300 MCTS simluations for each move during self-play, and we had 2000 self-play games. We termincated the training process after 30 hours, although the loss is still going down, which means the clone is still in the process of improving itself.
-<img src="docs/images/training_loss_tf_board.png" width="350" height="280"/> 
+For our simple AlphaGo Zero agent, we trained it on my local MacBook Pro. We used 300 MCTS simulations for each move during self-play, and we had 2000 self-play games. We terminated the training process after 30 hours, although the loss is still going down, which means the clone is still in the process of improving itself.
+<img src="docs/images/training_loss_tf_board.png" width="350" height="280"/>
 
-We evaluted the final AlphaGo agent by having it play 20 games against a simple MCTS only agent (with a uniform prior). Then we used the raw neural net without MCTS to play against random play for 100 games. The results are summarized in the table.
+We evaluated the final AlphaGo agent by having it play 20 games against a simple MCTS only agent (with a uniform prior). Then we used the raw neural net without MCTS to play against random play for 100 games. The results are summarized in the table.
 
-| AlphaGo Zero Simulation Number| MCTS Simluation Number| Games Won By AlphaGo Zero  | Games Won By MCTS | Games Tied |
+| AlphaGo Zero Simulation Number| MCTS Simulation Number| Games Won By AlphaGo Zero  | Games Won By MCTS | Games Tied |
 | ------------- |:-------------:| -----:|-----:|-----:|
 | 300   | 300 | 12 | 3 | 5 |
 | 300   | 500 | 12 | 4 | 4 |
@@ -34,12 +36,12 @@ We evaluted the final AlphaGo agent by having it play 20 games against a simple 
 ```
 pip install -e .
 ```
-<img src="docs/images/gui_initial.png" width="125" height="200"/> <img src="docs/images/gui_middle.png" width="125" height="200"/> 
+<img src="docs/images/gui_initial.png" width="125" height="200"/> <img src="docs/images/gui_middle.png" width="125" height="200"/>
 ### Step 3. To play with an AI Go player that was already trained.
 ```
 cd gui
 python human_machine_gui.py
-``` 
+```
 A pop up GUI is going to show up. It will look like this. Click start to start playing.
 You will be player black who moves first. Click an intersection on the board to place a move. <br>
 <br>

@@ -1,5 +1,4 @@
 import numpy as np
-np.set_printoptions(threshold=np.nan)
 from self_play.mcts import MCTS
 
 class SelfPlay():
@@ -27,7 +26,7 @@ class SelfPlay():
         self.history_boards = np.empty(0) #Records all the board config played in this self play session
 
     def play_one_move(self):
-        """Use MCTS to calculate the pi for current node, 
+        """Use MCTS to calculate the pi for current node,
            update self.moves and current node
            Return true if a move is made, return False if player decided to pass
            Returns:
@@ -59,7 +58,7 @@ class SelfPlay():
         while (not self.utils.is_game_finished(self.current_board)) and move_num <= self.current_board.board_dimension**2 * 2:
             self.play_one_move()
             move_num += 1
-   
+
         boards_data = np.array([augment_board for history_board in self.history_boards for augment_board in history_board.generate_augmented_boards()])
         reversed_boards_data = [b.reverse_board_config() for b in boards_data]
 
@@ -71,22 +70,6 @@ class SelfPlay():
         new_training_labels_v = np.append(new_training_labels_v, new_training_labels_v, axis=0)
         new_training_labels_p = np.repeat(np.array(self.policies), 5, axis=0)
         new_training_labels_p = np.append(new_training_labels_p, new_training_labels_p, axis=0)
-
-        # print(self.policies)
-        # print()
-        # print(new_training_labels_p)
-        # print("current board is ", self.current_board)
-        # print("a game is finished and winner is:", winner)
-        # print()
-        # print("self play 10 boards")
-        # for board in np.append(boards_data, reversed_boards_data):
-        #     print(str(board))
-        # print()
-        # print("v labels")
-        # print(new_training_labels_v)
-        # print()
-        # print("p labels")
-        # print(new_training_labels_p)
 
         return np.append(boards_data, reversed_boards_data), new_training_labels_p, new_training_labels_v
         #return boards_data, new_training_labels_p, new_training_labels_v
